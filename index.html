@@ -102,8 +102,8 @@ body.fxopen{overflow:hidden}
 .ddi[aria-disabled=true]{opacity:.45;cursor:not-allowed}.ddi .dk{width:16px;color:var(--acc);font-weight:bold;flex-shrink:0}.ddi .dic{width:22px;text-align:center;flex-shrink:0}
 .ddi .dt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.ddi small{display:block;color:var(--mut);font-size:11px;white-space:normal}
 @media(prefers-reduced-motion:reduce){.ddp,.dd>button .dc{transition:none}}
-#xpo{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding-top:max(12px,env(safe-area-inset-top,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}
-#xpo[hidden]{display:none!important}
+#xpo,#sepo{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding-top:max(12px,env(safe-area-inset-top,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}
+#xpo[hidden],#sepo[hidden]{display:none!important}
 .xdlg{width:min(94vw,470px);max-height:100%;overflow:auto;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.45);padding:14px 16px;display:grid;gap:12px;overscroll-behavior:contain}
 .xdlg h2{margin:0;font-size:16px}.xdlg label{display:grid;gap:4px;font-size:12px;color:var(--mut)}.xdlg .xr{display:flex;gap:8px;align-items:center}.xdlg .xr>input[type=range]{flex:1;min-height:30px}
 .xdlg input:not([type=range]):not([type=checkbox]){min-height:40px;width:100%}.xdlg #xVolN{width:78px}.xdlg .xext{color:var(--mut);font-size:13px;white-space:nowrap}
@@ -111,6 +111,8 @@ body.fxopen{overflow:hidden}
 .xbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.xbar i{display:block;height:100%;width:0;background:var(--acc);transition:width .1s}.xbar.ind i{width:35%;animation:xind 1s ease-in-out infinite alternate}
 @keyframes xind{from{margin-left:0}to{margin-left:65%}}#xMsg{font-size:12px;min-height:18px;color:var(--mut)}#xMsg.err{color:#e5484d}#xMsg.warn{color:#d4a017}#xMsg.ok{color:#2da44e}
 @media(prefers-reduced-motion:reduce){.xbar.ind i{animation:none;width:100%}}
+#seMsg{font-size:12px;min-height:16px;color:var(--mut)}#seMsg.err{color:#e5484d}#seInfo{font-size:12px;color:var(--mut)}
+#seVolN,#seSN,#seEN{width:92px!important}#sepo .xdlg input[type=range]{min-height:30px}
 @media(max-width:640px){aside{width:160px}}
 </style>
 </head>
@@ -122,7 +124,7 @@ body.fxopen{overflow:hidden}
 BPM <input id="bpm" type="number" min="40" max="240" value="120">
 <button id="loop" class="on">ループ</button>
 <button id="vSong">ソング</button><button id="vRoll" class="on">ピアノロール</button><button id="undo">↶</button><button id="redo">↷</button>
-<button id="save">保存</button><button id="exp">JSON書出</button><button id="imp">JSON読込</button><button id="sf2b">SF2読込</button><button id="sflB">SF2ライブラリ</button><select id="sr"><option value="44100">44.1kHz</option><option value="48000">48kHz</option></select><button id="wav">ダウンロード</button><button id="mexp">MIDI書出</button><button id="mimp">MIDI読込</button>
+<button id="save">保存</button><button id="exp">JSON書出</button><button id="imp">JSON読込</button><button id="reset" title="プロジェクトを初期状態に戻す">リセット</button><button id="sf2b">SF2読込</button><button id="sflB">SF2ライブラリ</button><select id="sr"><option value="44100">44.1kHz</option><option value="48000">48kHz</option></select><button id="wav">ダウンロード</button><button id="mexp">MIDI書出</button><button id="mimp">MIDI読込</button>
 <span id="st">読み込み中…</span>
 </header>
 <main>
@@ -141,6 +143,16 @@ BPM <input id="bpm" type="number" min="40" max="240" value="120">
 <input type="file" id="file" accept=".json" hidden>
 <input type="file" id="sf2f" accept=".sf2,.sf3" multiple hidden>
 <input type="file" id="midf" accept=".mid,.midi" hidden>
+<div id="sepo" hidden><div class="xdlg" role="dialog" aria-modal="true" aria-labelledby="seTtl"><h2 id="seTtl">SEの編集</h2>
+ <div style="display:grid;gap:2px"><b id="seName"></b><span id="seFile" style="font-size:11px;color:var(--mut)"></span></div>
+ <canvas id="seCv" style="width:100%;height:70px;border:1px solid var(--line);border-radius:8px;background:var(--bg)"></canvas>
+ <label>音量(このSEだけ・0〜100%)<span class="xr"><input type="range" id="seVol" min="0" max="100" step="1" aria-label="SEの音量"><input type="number" id="seVolN" min="0" max="100" step="1" aria-label="SEの音量(%)"><span>%</span></span></label>
+ <label>開始位置(秒)<span class="xr"><input type="range" id="seS" step="0.01" aria-label="開始位置"><input type="number" id="seSN" step="0.01" aria-label="開始位置(秒)"></span></label>
+ <label>終了位置(秒)<span class="xr"><input type="range" id="seE" step="0.01" aria-label="終了位置"><input type="number" id="seEN" step="0.01" aria-label="終了位置(秒)"></span></label>
+ <div id="seInfo"></div>
+ <div class="xr"><button id="sePrev">▶ 試聴</button><div class="xbar" id="seBar" style="flex:1"><i></i></div></div>
+ <div id="seMsg" role="status" aria-live="polite"></div>
+ <div class="xb"><button id="seRst">初期値に戻す</button><button id="seClose" class="pri">閉じる</button></div></div></div>
 <div id="xpo" hidden><div class="xdlg" role="dialog" aria-modal="true" aria-labelledby="xTtl"><h2 id="xTtl">ダウンロード(音声の書き出し)</h2>
  <label>ファイル名<span class="xr"><input id="xName" maxlength="100" autocomplete="off" spellcheck="false"><span class="xext" id="xExt">.wav</span></span></label>
  <label>出力形式<select id="xFmt" data-dd-search="0" aria-label="出力形式"></select><span id="xFmtNote" style="font-size:11px"></span></label>
@@ -298,7 +310,7 @@ const isBlack=p=>[1,3,6,8,10].includes(p%12);
 const NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 function normS(){
   if(!S||!Array.isArray(S.tracks)||!S.tracks.length)S=fresh();
-  fixPatterns();let mx=0;for(const pl of S.place)mx=Math.max(mx,pl.s+pl.l);for(const pl of S.aplace||[])mx=Math.max(mx,pl.s+pl.l);for(const t of S.tracks){t.notes=Array.isArray(t.notes)?t.notes:[];for(const n of t.notes){mx=Math.max(mx,n.s+n.d);n.v=Math.max(1,Math.min(127,Math.round(n.v)||100))}}
+  fixPatterns();seClean();let mx=0;for(const pl of S.place)mx=Math.max(mx,pl.s+pl.l);for(const pl of S.aplace||[])mx=Math.max(mx,pl.s+pl.l);for(const t of S.tracks){t.notes=Array.isArray(t.notes)?t.notes:[];for(const n of t.notes){mx=Math.max(mx,n.s+n.d);n.v=Math.max(1,Math.min(127,Math.round(n.v)||100))}}
   S.atracks=Array.isArray(S.atracks)?S.atracks:[];for(const tr of S.atracks){tr.clips=Array.isArray(tr.clips)?tr.clips:[];for(const c of tr.clips)mx=Math.max(mx,c.s+c.d*(S.bpm||120)/60)}
   let L=Number(S.len);if(!isFinite(L)||L<4)L=16;L=Math.max(L,mx);
   S.len=Math.min(MAXBARS*4,Math.ceil(L/4)*4);
@@ -912,10 +924,11 @@ async function idbA(op,key,val){const db=await dbp;return new Promise((res,rej)=
 function fitLen(){let mx=0;for(const tr of AT())for(const c of tr.clips)mx=Math.max(mx,c.s+cbt(c));if(mx>S.len)S.len=Math.min(MAXBARS*4,Math.ceil(mx/4)*4)}
 const aSnap=b=>{const g=+$('asn').value;return g>0?Math.round(b/g)*g:b};
 function startClip(c,tr,when,off,dur,live){const f=AFILES.get(c.f);if(!f||!f.buf||dur<=.001)return;
-  const src=ctx.createBufferSource(),g=ctx.createGain(),lv=c.g==null?1:c.g;src.buffer=f.buf;
+  const se=seOf(c.f,f.buf.duration);if(se){const a=Math.max(off,se.start),b2=Math.min(off+dur,se.end);if(b2-a<=.001)return;when+=a-off;dur=b2-a;off=a}
+  const src=ctx.createBufferSource(),g=ctx.createGain(),lv=(c.g==null?1:c.g)*(se?se.vol:1);src.buffer=f.buf;
   g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(lv,when+.004);g.gain.setValueAtTime(lv,Math.max(when+.004,when+dur-.006));g.gain.linearRampToValueAtTime(0,when+dur);
   src.connect(g);g.connect(aGain(tr));src.start(when,Math.max(0,off),dur);
-  if(live){ASRC.add(src);src.onended=()=>ASRC.delete(src)}}
+  if(live){src._tr=tr;ASRC.add(src);src.onended=()=>ASRC.delete(src)}}
 function startPartial(){for(const tr of AT())for(const c of tr.clips){const cb=cbt(c);
   if(c.s<nextBeat-1e-6&&c.s+cb>nextBeat+1e-6){const sk=(nextBeat-c.s)*spb();startClip(c,tr,nextTime,c.o+sk,Math.min(c.d-sk,(S.len-nextBeat)*spb()),true)}}}
 async function addAudio(file){
@@ -932,13 +945,13 @@ async function loadAudioFiles(){const ids=new Set();for(const tr of AT())for(con
   for(const id of ids){if(AFILES.has(id))continue;try{const v=await idbA('get',id);if(!v)throw 0;const buf=await decodeBytes(v.data);AFILES.set(id,{name:v.name,buf,peaks:mkPeaks(buf)})}catch(e){miss++}}
   if(ids.size){draw();if(miss)$('st').textContent='音声データ'+miss+'件が見つかりません(JSON読込や保存失敗の可能性。音声を再読込してください)'}}
 function renderATracks(){const el=$('atl');el.innerHTML='';
-  AT().forEach((tr,i)=>{const d=document.createElement('div');d.className='trk';
-    d.innerHTML='<div class="r"><input value="'+tr.name.replace(/[<>&"]/g,'')+'"><button data-a="x" title="削除">✕</button></div><div class="r"><label>音量</label><input type="range" min="0" max="1.5" step=".01" value="'+tr.vol+'"></div><div class="r"><button data-a="m" class="'+(tr.mute?'on':'')+'">M</button><button data-a="s" class="'+(tr.solo?'on':'')+'">S</button><label>♪ 音声</label></div>';
+  AT().forEach((tr,i)=>{const d=document.createElement('div');d.className='trk'+(seEd.tr===tr&&!seo.hidden?' sel':'');
+    d.innerHTML='<div class="r"><input value="'+tr.name.replace(/[<>&"]/g,'')+'"><button data-a="e" title="SEの長さ・音量を編集">編集</button><button data-a="x" title="SEを削除">削除</button></div><div class="r"><label>音量</label><input type="range" min="0" max="1.5" step=".01" value="'+tr.vol+'"></div><div class="r"><button data-a="m" class="'+(tr.mute?'on':'')+'">M</button><button data-a="s" class="'+(tr.solo?'on':'')+'">S</button>'+seLabel(tr)+'</div>';
     d.querySelector('input').oninput=e=>{tr.name=e.target.value;drawAL();dirty()};
     d.querySelector('[type=range]').oninput=e=>{tr.vol=+e.target.value;updateAllAGains();dirty()};
     d.querySelector('[data-a=m]').onclick=()=>{tr.mute=!tr.mute;renderATracks();drawAL();dirty()};
     d.querySelector('[data-a=s]').onclick=()=>{tr.solo=!tr.solo;renderATracks();drawAL();dirty()};
-    d.querySelector('[data-a=x]').onclick=()=>{if(!confirm(tr.name+' を削除しますか?'))return;pushUndo();AT().splice(i,1);aSel=null;renderATracks();draw();dirty()};
+    d.querySelector('[data-a=x]').onclick=()=>seDelete(tr);d.querySelector('[data-a=e]').onclick=()=>seOpen(tr);
     el.appendChild(d)});updateAllAGains()}
 const _rt2=renderTracks;renderTracks=function(){_rt2();renderATracks()};
 /* タイムライン(波形付きクリップ) */
@@ -964,6 +977,9 @@ function drawAL(){const T=AT(),w=$('alw');if(!T.length){w.style.display='none';r
           for(let b=Math.max(0,b0);b<=Math.min(nb-1,b1);b++){if(pk[b*2]<mn)mn=pk[b*2];if(pk[b*2+1]>mx)mx=pk[b*2+1]}
           if(mx>=mn){const y1=mid-mx*amp,hh=Math.max(1,(mx-mn)*amp);ag.fillRect(x0+px,y1,1,hh)}}}
       else{ag.fillStyle=C.mut;ag.font='11px system-ui';ag.fillText('音声データなし(再読込してください)',x0+6,y+ROWH/2+4)}
+      {const se=seOf(c.f,f&&f.buf?f.buf.duration:0);if(se&&f&&f.buf){const px=t=>x0+(t-c.o)/spb()*BW,e0=c.o+c.d;ag.globalAlpha=.55;ag.fillStyle=C.panel;
+          if(se.start>c.o){const xa=px(c.o),xb=px(Math.min(se.start,e0));ag.fillRect(xa,y+3,Math.max(0,xb-xa),ROWH-6)}
+          if(se.end<e0){const xa=px(Math.max(se.end,c.o)),xb=px(e0);ag.fillRect(xa,y+3,Math.max(0,xb-xa),ROWH-6)}}}
       ag.globalAlpha=1;ag.strokeStyle=sel?C.fg:C.acc;ag.lineWidth=sel?2:1;ag.strokeRect(x0+.5,y+3.5,wp,ROWH-7);ag.lineWidth=1;
       ag.fillStyle=C.fg;ag.font='10px system-ui';ag.save();ag.beginPath();ag.rect(x0,y+3,wp,14);ag.clip();ag.fillText((f?f.name:'?'),Math.max(x0,0)+4,y+13);ag.restore()}
     ag.fillStyle=C.mut;ag.font='bold 10px system-ui';ag.fillText(tr.name+(mt?' (無音)':''),6,y+ROWH-5)});
@@ -1712,6 +1728,71 @@ function init(){document.querySelectorAll('select').forEach(enhance);
   addEventListener('blur',()=>close(false))}
 return{model,rows,nav,place,defOpen,enhance,create,close:()=>close(true),openNow:()=>!!st.open,init}})();
 DD.init();
+/* ---------- SE(取り込んだ音声)の編集・削除 / プロジェクトのリセット ----------
+   元の音声データ(AFILES)は変更せず、編集設定だけを S.se[ファイルID]={vol,start,end} に分離して保持する(何度編集しても劣化しない) */
+const seo=$('sepo'),seEd={tr:null,fid:null,dur:0,prev:null,pushed:false,ret:null,rt:0};
+function seOf(fid,dur){const e=S.se&&S.se[fid];if(!e)return null;return{vol:e.vol==null?1:e.vol,start:Math.max(0,+e.start||0),end:e.end==null?dur:Math.min(dur,+e.end)}}
+function seClean(){const src=(S.se&&typeof S.se==='object')?S.se:{},used=new Set(),o={};for(const tr of (Array.isArray(S.atracks)?S.atracks:[]))for(const c of (tr&&Array.isArray(tr.clips)?tr.clips:[]))if(c)used.add(c.f);
+  for(const k of used){const e=src[k];if(!e||typeof e!=='object')continue;let v=+e.vol,a=+e.start,b=e.end==null?null:+e.end;v=isFinite(v)?Math.max(0,Math.min(1,v)):1;a=isFinite(a)&&a>0?a:0;if(b!=null&&(!isFinite(b)||b<=a+.01))b=null;o[k]={vol:v,start:a,end:b}}S.se=o}
+const seLabel=tr=>(seEd.tr===tr&&!seo.hidden)?'<label style="color:var(--acc);font-weight:bold">● 編集中</label>':'<label>♪ 音声</label>';
+function seEff(){const f=AFILES.get(seEd.fid),d=f.buf.duration,e=(S.se&&S.se[seEd.fid])||{};return{vol:e.vol==null?1:e.vol,start:Math.max(0,e.start||0),end:e.end==null?d:Math.min(d,e.end),dur:d,f}}
+function seMsg(t,c){const e=$('seMsg');e.textContent=t||'';e.className=c||''}
+function seOpen(tr){const c=tr.clips[0];if(!c){alert('このSEにはクリップがありません');return}const f=AFILES.get(c.f);
+  if(!f||!f.buf){alert('このSEの音声データが読み込まれていません。音声ファイルを読み込み直してください');return}
+  seEd.tr=tr;seEd.fid=c.f;seEd.dur=f.buf.duration;seEd.pushed=false;seEd.ret=document.activeElement;
+  const used=AT().reduce((n,t)=>n+t.clips.filter(x=>x.f===c.f).length,0);
+  $('seName').textContent=tr.name;$('seFile').textContent='元ファイル: '+f.name+' / 全体 '+seEd.dur.toFixed(2)+'秒 / 使用中のクリップ '+used+'個(この設定はすべてのクリップに適用されます)';
+  for(const id of ['seS','seE','seSN','seEN']){const el=$(id);el.min=0;el.max=seEd.dur.toFixed(3)}
+  seSync();seMsg('');seo.hidden=false;document.body.classList.add('fxopen');renderATracks();$('sePrev').focus()}
+function seSync(){const e=seEff();$('seVol').value=Math.round(e.vol*100);$('seVolN').value=Math.round(e.vol*100);$('seS').value=e.start;$('seSN').value=e.start.toFixed(2);$('seE').value=e.end;$('seEN').value=e.end.toFixed(2);
+  $('seInfo').textContent='再生範囲 '+e.start.toFixed(2)+' – '+e.end.toFixed(2)+' 秒(長さ '+(e.end-e.start).toFixed(2)+' 秒 / 全体 '+e.dur.toFixed(2)+' 秒)・音量 '+Math.round(e.vol*100)+'%';seDraw()}
+function seSet(patch){if(!seEd.tr)return;if(!seEd.pushed){pushUndo();seEd.pushed=true}
+  S.se=S.se||{};const e=S.se[seEd.fid]||(S.se[seEd.fid]={vol:1,start:0,end:null}),d=seEd.dur,cur=seEff();
+  if('vol' in patch){const v=+patch.vol;if(isFinite(v))e.vol=Math.max(0,Math.min(1,v/100))}
+  const rng=('start' in patch)||('end' in patch);
+  if(rng){let a='start' in patch?+patch.start:cur.start,b='end' in patch?+patch.end:cur.end;if(!isFinite(a))a=cur.start;if(!isFinite(b))b=cur.end;
+    a=Math.max(0,Math.min(a,d-.02));b=Math.min(d,Math.max(b,.02));
+    if('start' in patch&&a>b-.02)a=Math.max(0,b-.02);if('end' in patch&&b<a+.02)b=Math.min(d,a+.02);
+    e.start=Math.round(a*1000)/1000;e.end=b>=d-.0005?null:Math.round(b*1000)/1000}
+  dirty();seSync();drawAL();
+  if(rng){if(seEd.prev){clearTimeout(seEd.rt);seEd.rt=setTimeout(sePlay,150)}}else if(seEd.prev)seEd.prev.vg.gain.value=seEff().vol}
+function seStop(){const p=seEd.prev;seEd.prev=null;clearTimeout(seEd.rt);if(p){try{p.src.onended=null;p.src.stop()}catch(_){}try{p.vg.disconnect()}catch(_){}}$('sePrev').textContent='▶ 試聴';$('seBar').firstChild.style.width='0'}
+async function sePlay(){seStop();if(!seEd.tr)return;const f=AFILES.get(seEd.fid);if(!f||!f.buf){seMsg('音声データがありません','err');return}
+  try{initAudio();await ctx.resume();const e=seEff(),src=ctx.createBufferSource(),env=ctx.createGain(),vg=ctx.createGain(),len=e.end-e.start,t0=ctx.currentTime+.03;
+    src.buffer=f.buf;env.gain.setValueAtTime(0,t0);env.gain.linearRampToValueAtTime(1,t0+Math.min(.004,len/2));env.gain.setValueAtTime(1,t0+Math.max(.004,len-.006));env.gain.linearRampToValueAtTime(0,t0+len);
+    vg.gain.value=e.vol;src.connect(env);env.connect(vg);vg.connect(ctx.destination);src.start(t0,e.start,len);
+    seEd.prev={src,vg,t0,len};src.onended=()=>{if(seEd.prev&&seEd.prev.src===src)seStop()};$('sePrev').textContent='■ 停止';seTick();seMsg('')}
+  catch(er){seMsg('試聴できません: '+er.message,'err')}}
+function seTick(){const p=seEd.prev;if(!p)return;$('seBar').firstChild.style.width=Math.round(Math.max(0,Math.min(1,(ctx.currentTime-p.t0)/p.len))*100)+'%';requestAnimationFrame(seTick)}
+function seDraw(){const cv2=$('seCv'),f=AFILES.get(seEd.fid);if(!f||!cv2)return;const r=devicePixelRatio||1,w=Math.max(100,cv2.clientWidth),h=70;
+  if(cv2.width!==Math.round(w*r)||cv2.height!==Math.round(h*r)){cv2.width=Math.round(w*r);cv2.height=Math.round(h*r)}
+  const g=cv2.getContext('2d');g.setTransform(r,0,0,r,0,0);const C={bg:css('--bg'),acc:css('--acc'),fg:css('--fg')};g.fillStyle=C.bg;g.fillRect(0,0,w,h);
+  const pk=f.peaks,nb=pk.length/2,e=seEff(),mid=h/2;g.fillStyle=C.acc;
+  for(let x=0;x<w;x++){const b0=Math.floor(x/w*nb),b1=Math.max(b0,Math.floor((x+1)/w*nb)-1);let mn=1,mx=-1;for(let b=b0;b<=Math.min(nb-1,b1);b++){if(pk[b*2]<mn)mn=pk[b*2];if(pk[b*2+1]>mx)mx=pk[b*2+1]}if(mx>=mn)g.fillRect(x,mid-mx*(mid-4),1,Math.max(1,(mx-mn)*(mid-4)))}
+  const xa=e.start/e.dur*w,xb=e.end/e.dur*w;g.globalAlpha=.65;g.fillStyle=C.bg;g.fillRect(0,0,xa,h);g.fillRect(xb,0,w-xb,h);g.globalAlpha=1;g.fillStyle=C.fg;g.fillRect(Math.max(0,xa-1),0,2,h);g.fillRect(Math.min(w-2,xb-1),0,2,h)}
+function seClose(){seStop();seo.hidden=true;document.body.classList.remove('fxopen');seEd.tr=null;seEd.fid=null;renderATracks();if(seEd.ret&&seEd.ret.isConnected)seEd.ret.focus()}
+function seDelete(tr){const i=AT().indexOf(tr);if(i<0)return;
+  if(!confirm('SE「'+tr.name+'」を一覧から削除します。\n(このSEのクリップもタイムラインから取り除かれます。元の音声ファイルは変更されません。「元に戻す(↶)」で取り消せます)\n\nよろしいですか?'))return;
+  if(seEd.tr===tr){seStop();seo.hidden=true;document.body.classList.remove('fxopen');seEd.tr=null;seEd.fid=null}
+  ASRC.forEach(x=>{if(x._tr===tr){try{x.stop()}catch(_){}ASRC.delete(x)}});const g=AG.get(tr);if(g){try{g.disconnect()}catch(_){}AG.delete(tr)}
+  pushUndo();AT().splice(i,1);if(aSel&&aSel.tr===tr)aSel=null;seClean();renderATracks();draw();dirty();$('st').textContent='SE「'+tr.name+'」を削除しました'}
+$('seVol').oninput=e=>seSet({vol:e.target.value});$('seVolN').onchange=e=>{seSet({vol:Math.max(0,Math.min(100,+e.target.value||0))});seEd.pushed=false};
+$('seS').oninput=e=>seSet({start:e.target.value});$('seE').oninput=e=>seSet({end:e.target.value});
+$('seSN').onchange=e=>{seSet({start:e.target.value});seEd.pushed=false};$('seEN').onchange=e=>{seSet({end:e.target.value});seEd.pushed=false};
+['seVol','seS','seE'].forEach(id=>$(id).onchange=()=>{seEd.pushed=false});
+$('sePrev').onclick=()=>seEd.prev?seStop():sePlay();$('seClose').onclick=seClose;
+$('seRst').onclick=()=>{if(!seEd.tr)return;pushUndo();S.se=S.se||{};S.se[seEd.fid]={vol:1,start:0,end:null};seEd.pushed=false;dirty();seSync();drawAL();if(seEd.prev)sePlay();seMsg('初期値(音量100%・全体を再生)に戻しました')};
+seo.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Tab'){const f=[...seo.querySelectorAll('button:not([disabled]),input:not([disabled])')].filter(x=>x.offsetParent!==null);if(f.length){const i=f.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus()}}}});
+addEventListener('keydown',e=>{if(seo.hidden||e.key!=='Escape'||(typeof DD!=='undefined'&&DD.openNow()))return;e.stopImmediatePropagation();seClose()},true);
+function resetProject(){
+  if(!confirm('プロジェクトをリセットします。\n\n【初期状態に戻るもの】\n・トラック、音符、パターン、ソングの配置\n・追加したSE(音声)と、その編集内容\n・オートメーション、自作エフェクト\n・ミキサー、エフェクト、BPM、小節数の設定\n\n【残るもの】SF2ライブラリ、画面の表示設定\n\n実行後も「元に戻す(↶)」で取り消せます。実行しますか?'))return;
+  stop(true);seStop();if(!seo.hidden){seo.hidden=true;document.body.classList.remove('fxopen')}seEd.tr=null;seEd.fid=null;
+  pushUndo();
+  for(const t of S.tracks){for(const e of (t.fx||[])){const n=FXN.get(e);if(n&&n.ds){try{n.ds()}catch(_){}}}const c=CH.get(t);if(c){for(const k of ['pan','vg','eg']){try{c[k]&&c[k].disconnect()}catch(_){}}}}
+  for(const tr of AT()){const g=AG.get(tr);if(g){try{g.disconnect()}catch(_){}}}
+  S=fresh();sel=0;selNote=null;selSet.clear();sSel=null;selA=null;aSel=null;asel=new Set();EA=null;EQ=null;eaId=null;eqId=null;drag=null;playBeat=0;lastDur=1;bufObj=null;
+  normS();LIBVER++;$('bpm').value=S.bpm;roll.scrollLeft=0;renderTracks();draw();dirty();upPos();$('st').textContent='プロジェクトをリセットしました(↶ で元に戻せます)'}
+$('reset').onclick=resetProject;
 normS();
 applyPanels();
 /* ---------- 小節数の変更 ---------- */
