@@ -142,6 +142,19 @@ button,select,input,label{touch-action:manipulation}
 @media(max-width:700px){header{padding:4px 6px;gap:4px}#st{flex-basis:100%;order:99;font-size:11px;margin-left:0}#mtw{width:44px!important}
   .bar2{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}.bar2>*{flex-shrink:0}.bar2 .sl{display:inline}}
 @media(max-width:640px){aside{width:160px}.aact{flex-direction:column}}
+
+/* ---- トラック欄の横はみ出し対策（レイアウトのみ） ---- */
+aside{min-width:0;overflow-x:hidden}
+#tl,#atl,.trk{min-width:0;max-width:100%}
+.trk{width:100%;overflow:visible}
+.trk .r{min-width:0;max-width:100%}
+.trk .r>*{min-width:0;max-width:100%}
+.trk .r:first-child{flex-wrap:wrap}
+.trk .r:first-child input[data-k="name"]{flex:1 1 100%;width:100%;min-width:0}
+.trk .r:first-child button{flex:1 1 0;min-width:0;padding-left:4px;padding-right:4px}
+.trk select,.trk input:not([type="color"]):not([type="range"]){width:100%;min-width:0}
+.trk .dd{width:100%;min-width:0;max-width:100%}
+
 </style>
 </head>
 <body>
