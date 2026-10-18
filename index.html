@@ -102,8 +102,8 @@ body.fxopen{overflow:hidden}
 .ddi[aria-disabled=true]{opacity:.45;cursor:not-allowed}.ddi .dk{width:16px;color:var(--acc);font-weight:bold;flex-shrink:0}.ddi .dic{width:22px;text-align:center;flex-shrink:0}
 .ddi .dt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.ddi small{display:block;color:var(--mut);font-size:11px;white-space:normal}
 @media(prefers-reduced-motion:reduce){.ddp,.dd>button .dc{transition:none}}
-#xpo,#sepo{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding-top:max(12px,env(safe-area-inset-top,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}
-#xpo[hidden],#sepo[hidden]{display:none!important}
+#xpo,#sepo,#sbpo{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding-top:max(12px,env(safe-area-inset-top,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}
+#xpo[hidden],#sepo[hidden],#sbpo[hidden]{display:none!important}
 .xdlg{width:min(94vw,470px);max-height:100%;overflow:auto;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.45);padding:14px 16px;display:grid;gap:12px;overscroll-behavior:contain}
 .xdlg h2{margin:0;font-size:16px}.xdlg label{display:grid;gap:4px;font-size:12px;color:var(--mut)}.xdlg .xr{display:flex;gap:8px;align-items:center}.xdlg .xr>input[type=range]{flex:1;min-height:30px}
 .xdlg input:not([type=range]):not([type=checkbox]){min-height:40px;width:100%}.xdlg #xVolN{width:78px}.xdlg .xext{color:var(--mut);font-size:13px;white-space:nowrap}
@@ -112,7 +112,7 @@ body.fxopen{overflow:hidden}
 @keyframes xind{from{margin-left:0}to{margin-left:65%}}#xMsg{font-size:12px;min-height:18px;color:var(--mut)}#xMsg.err{color:#e5484d}#xMsg.warn{color:#d4a017}#xMsg.ok{color:#2da44e}
 @media(prefers-reduced-motion:reduce){.xbar.ind i{animation:none;width:100%}}
 #seMsg{font-size:12px;min-height:16px;color:var(--mut)}#seMsg.err{color:#e5484d}#seInfo{font-size:12px;color:var(--mut)}
-#seVolN,#seSN,#seEN{width:92px!important}#sepo .xdlg input[type=range]{min-height:30px}
+#seVolN,#seSN,#seEN,#sbW,#sbR{width:96px!important}#sbInfo{font-size:12px;color:var(--mut);line-height:1.5}#sbMsg{font-size:12px;min-height:16px;color:var(--mut)}.ctxm{min-width:200px}.ctxm .ddi{min-height:42px}#sepo .xdlg input[type=range]{min-height:30px}
 /* ---- アイコンボタン(統一デザイン) ---- */
 .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;pointer-events:none}
 button.ib,span.ib{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:34px;min-height:34px;min-width:34px;padding:0 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s,border-color .12s,color .12s}
@@ -179,6 +179,8 @@ button,select,input,label{touch-action:manipulation}
 <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
 <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
+<symbol id="i-ruler" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></symbol>
+<symbol id="i-move-h" viewBox="0 0 24 24"><polyline points="18 8 22 12 18 16"/><polyline points="6 8 2 12 6 16"/><line x1="2" x2="22" y1="12" y2="12"/></symbol>
 </defs></svg>
 <header>
 <button id="play" class="ib sq" data-tip="再生 / 一時停止" data-key="Space" aria-label="再生 / 一時停止" data-toggle="1"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg></button><button id="stop" class="ib sq" data-tip="停止(先頭へ戻る)" aria-label="停止(先頭へ戻る)"><svg class="ic" aria-hidden="true"><use href="#i-square"/></svg></button><button id="rew" class="ib sq" data-tip="先頭へ戻る" aria-label="先頭へ戻る"><svg class="ic" aria-hidden="true"><use href="#i-skip-back"/></svg></button>
@@ -202,13 +204,21 @@ button,select,input,label{touch-action:manipulation}
 </main>
 <div id="hs"><div id="hsT"></div><i id="hsP"></i></div>
 <div class="bar2" id="abar" style="display:none"><b id="ainfo"></b><input id="an" style="width:110px;min-height:32px"><select id="akd"><option value="vol">音量</option><option value="pitch">ピッチ</option><option value="echo">エコー</option></select><button id="amLine">折れ線</button><button id="amCurve">曲線</button><span class="acv">滑らかさ</span><input class="acv" id="asm" type="range" min="0" max="1" step=".05" style="width:90px;min-height:24px"><span class="apt">範囲±半音</span><input class="apt" id="arng" type="number" min="1" max="48" style="width:60px;min-height:32px;padding:2px 6px"><span class="aeo">遅延(秒)</span><input class="aeo" id="atm" type="number" step=".05" min=".02" max="1" style="width:64px;min-height:32px;padding:2px 6px"><span class="aeo">フィードバック</span><input class="aeo" id="afb" type="number" step=".05" min="0" max=".85" style="width:64px;min-height:32px;padding:2px 6px"><span>長さ(小節)</span><input id="alen" type="number" min="1" max="64" style="width:60px;min-height:32px;padding:2px 6px"><label><input type="checkbox" id="asnOn" checked>スナップ</label><span>点:タップ追加 / ドラッグ移動 / 右クリックかDelete削除 / 範囲選択:選択モードかShift</span></div>
-<div class="bar2" id="sgbar" style="display:none"><b>ソング</b><select id="akind"><option value="vol">音量</option><option value="pitch">ピッチ</option><option value="echo">エコー</option></select><button id="sgAT">＋オートメーショントラック</button><button id="sgDelAT">AUTOトラック削除</button><input id="pn" placeholder="パターン名" style="width:130px;min-height:32px"><input id="pc" type="color" style="width:44px;min-height:32px;padding:2px"><button id="sgOpen">ピアノロールで開く</button><button id="sgDup">複製(同じパターンを参照)</button><button id="sgCopy">独立コピー</button><button id="sgDel">ブロック削除</button><button id="sgDelP">パターン削除</button><span>空きマスをタップ:新規 / ダブルタップ:開く / 右端:長さ(小節単位)</span></div>
+<div class="bar2" id="sgbar" style="display:none"><b>ソング</b><select id="akind"><option value="vol">音量</option><option value="pitch">ピッチ</option><option value="echo">エコー</option></select><button id="sgAT">＋オートメーショントラック</button><button id="sgDelAT">AUTOトラック削除</button><input id="pn" placeholder="パターン名" style="width:130px;min-height:32px"><input id="pc" type="color" style="width:44px;min-height:32px;padding:2px"><button id="sgOpen">ピアノロールで開く</button><button id="sgDup">複製(同じパターンを参照)</button><button id="sgCopy">独立コピー</button><button id="sgDel">ブロック削除</button><button id="sgDelP">パターン削除</button><span class="sep"></span><button id="sgRange" class="ib lbl" data-toggle="1" data-tip="再生範囲編集モード: OFF(右端のドラッグは表示幅だけを変更)" aria-label="再生範囲編集モード"><svg class="ic" aria-hidden="true"><use href="#i-ruler"/></svg><span class="lb">再生範囲</span></button><button id="sgSizes" class="ib lbl" data-tip="選択ブロックの表示幅・再生範囲を数値で編集" aria-label="幅と再生範囲を編集"><svg class="ic" aria-hidden="true"><use href="#i-move-h"/></svg><span class="lb">幅・範囲</span></button><span class="sl">スナップ</span><select id="sgSnap" aria-label="ブロックのスナップ" data-dd-search="0" data-tip="ブロックの移動・幅・範囲のスナップ(なし=自由に細かく)"><option value="4" selected>1小節</option><option value="1">1拍</option><option value="0.25">1/16</option><option value="0">なし</option></select><span class="ib sq hint" tabindex="0" role="img" aria-label="操作のヒント" data-tip="空きマスをタップ:新規 / ダブルタップ:開く / 右端ドラッグ:表示幅(見た目のみ) / 長押し・右クリック:メニュー / 「再生範囲」ON:オレンジの取っ手で再生範囲を変更"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg></span></div>
 <div class="bar2"><b id="pinfo"></b><span class="sl">パターン長</span><input id="plen" type="number" min="1" max="64" style="width:64px;min-height:32px;padding:2px 6px"><span class="ib sq hint" tabindex="0" role="img" aria-label="操作のヒント" data-tip="タップ:音符を追加 → もう一度タップ:削除(「消去」でON/OFF) / ドラッグ:移動 / 右端ドラッグ:長さ変更 / 範囲選択:選択モードかShift+ドラッグ / スマホ: 空き領域のドラッグでスクロール・2本指でズーム"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg></span><button id="mdsel" class="ib sq" data-tip="選択モード(ドラッグで範囲選択)" aria-label="選択モード(ドラッグで範囲選択)" data-toggle="1"><svg class="ic" aria-hidden="true"><use href="#i-box-select"/></svg></button><span class="sep"></span><button id="tapdel" class="ib lbl on" data-toggle="1" data-tip="タップ消去: ON(音符をもう一度タップで削除)" aria-label="タップ消去"><svg class="ic" aria-hidden="true"><use href="#i-eraser"/></svg><span class="lb">消去</span></button><button id="cp" class="ib sq" data-tip="コピー" data-key="Ctrl/⌘+C" aria-label="コピー"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg></button><button id="ct" class="ib sq" data-tip="切り取り" data-key="Ctrl/⌘+X" aria-label="切り取り"><svg class="ic" aria-hidden="true"><use href="#i-scissors"/></svg></button><button id="pst" class="ib sq" data-tip="貼り付け(再生位置へ)" data-key="Ctrl/⌘+V" aria-label="貼り付け(再生位置へ)"><svg class="ic" aria-hidden="true"><use href="#i-clipboard"/></svg></button><button id="dup" class="ib sq" data-tip="複製(選択を直後に)" data-key="Ctrl/⌘+D" aria-label="複製(選択を直後に)"><svg class="ic" aria-hidden="true"><use href="#i-copy-plus"/></svg></button><button id="sall" class="ib lbl" data-tip="すべて選択" data-key="Ctrl/⌘+A" aria-label="すべて選択"><span class="lb">全選択</span></button><button id="del" class="ib sq danger" data-tip="選択項目を削除(音符 / ブロック / クリップ)" data-key="Delete" aria-label="選択項目を削除(音符 / ブロック / クリップ)"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg></button><span class="sep"></span><span class="sl">小節</span><button id="bm" class="ib sq" data-tip="小節数を1減らす" aria-label="小節数を1減らす"><svg class="ic" aria-hidden="true"><use href="#i-minus"/></svg></button><input id="bars" type="number" min="1" max="256" value="4"><button id="bp" class="ib sq" data-tip="小節数を1増やす" aria-label="小節数を1増やす"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button><button id="bp4" class="ib lbl" data-tip="小節数を4増やす" aria-label="小節数を4増やす"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span class="lb">4</span></button><span class="sep"></span><span class="sl">横</span><button id="zhm" class="ib sq" data-tip="横ズーム縮小" data-key="Ctrl+ホイール" aria-label="横ズーム縮小"><svg class="ic" aria-hidden="true"><use href="#i-zoom-out"/></svg></button><b id="zhl" class="zv">100%</b><button id="zhp" class="ib sq" data-tip="横ズーム拡大" data-key="Ctrl+ホイール" aria-label="横ズーム拡大"><svg class="ic" aria-hidden="true"><use href="#i-zoom-in"/></svg></button><button id="zhr" class="ib lbl" data-tip="横ズームを100%に戻す" aria-label="横ズームを100%に戻す"><span class="lb">100%</span></button><span class="sl">縦</span><button id="zvm" class="ib sq" data-tip="縦ズーム縮小" aria-label="縦ズーム縮小"><svg class="ic" aria-hidden="true"><use href="#i-zoom-out"/></svg></button><b id="zvl" class="zv">100%</b><button id="zvp" class="ib sq" data-tip="縦ズーム拡大" aria-label="縦ズーム拡大"><svg class="ic" aria-hidden="true"><use href="#i-zoom-in"/></svg></button><span class="sep"></span><span class="sl">音符</span><select id="grid" aria-label="音符スナップ" data-tip="音符スナップ(細かさ)"><option value="1">1拍(4分)</option><option value="0.5">1/2拍(8分)</option><option value="0.25" selected>1/4拍(16分)</option><option value="0.125">1/8拍(32分)</option><option value="0.0625">1/16拍(64分)</option><option value="0.3333333333333333">3連(1/3拍)</option><option value="0.16666666666666666">3連(1/6拍)</option><option value="0.01">ほぼ自由</option></select><span class="sl">音声</span><select id="asn" aria-label="音声スナップ" data-tip="音声クリップのスナップ"><option value="4">1小節</option><option value="1" selected>1拍</option><option value="0.25">1/16</option><option value="0">なし</option></select><span id="info"></span></div>
 <div id="mx"></div>
 <div id="dock"><b style="font-size:11px;color:var(--mut);align-self:center;white-space:nowrap">表示</b><button class="ib lbl" data-pn="tr" data-toggle="1" data-tip="トラック欄の表示 / 非表示" aria-label="トラック欄の表示 / 非表示"><svg class="ic" aria-hidden="true"><use href="#i-panel-left"/></svg><span class="lb">トラック欄</span></button><button class="ib lbl" data-pn="tb" data-toggle="1" data-tip="編集ツールバーの表示 / 非表示" aria-label="編集ツールバーの表示 / 非表示"><svg class="ic" aria-hidden="true"><use href="#i-panel-top"/></svg><span class="lb">ツールバー</span></button><button class="ib lbl" data-pn="mx" data-toggle="1" data-tip="ミキサーの表示 / 非表示" aria-label="ミキサーの表示 / 非表示"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg><span class="lb">ミキサー</span></button><button class="ib lbl" data-pn="vl" data-toggle="1" data-tip="ベロシティの表示 / 非表示" aria-label="ベロシティの表示 / 非表示"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg><span class="lb">ベロシティ</span></button><button class="ib lbl" data-pn="al" data-toggle="1" data-tip="音声レーンの表示 / 非表示" aria-label="音声レーンの表示 / 非表示"><svg class="ic" aria-hidden="true"><use href="#i-waveform"/></svg><span class="lb">音声レーン</span></button><button id="pnFocus" class="ib lbl" data-toggle="1" data-tip="すべてのパネルをしまう(集中)" aria-label="すべてのパネルをしまう"><svg class="ic" aria-hidden="true"><use href="#i-maximize"/></svg><span class="lb">集中</span></button></div>
 <input type="file" id="file" accept=".json" hidden>
 <input type="file" id="sf2f" accept=".sf2,.sf3" multiple hidden>
 <input type="file" id="midf" accept=".mid,.midi" hidden>
+<div id="sbpo" hidden><div class="xdlg" role="dialog" aria-modal="true" aria-labelledby="sbTtl"><h2 id="sbTtl">ブロックの表示幅・再生範囲</h2>
+ <div id="sbName" style="font-weight:bold"></div>
+ <label>表示幅(拍) — 見た目だけ。再生範囲・音符は変わりません<span class="xr"><input type="range" id="sbWs" min="0.5" step="0.25" aria-label="表示幅"><input type="number" id="sbW" min="0.5" step="0.25" aria-label="表示幅(拍)"></span></label>
+ <label>再生範囲(拍) — 実際に再生される長さ<span class="xr"><input type="number" id="sbR" min="0.25" step="0.25" aria-label="再生範囲(拍)"><span id="sbRb" style="font-size:12px;color:var(--mut)"></span></span></label>
+ <div id="sbInfo"></div>
+ <div class="xb" style="justify-content:flex-start"><button id="sbFit">表示幅を再生範囲に合わせる</button><button id="sbReset">表示幅を初期値に戻す</button></div>
+ <div id="sbMsg" role="status" aria-live="polite"></div>
+ <div class="xb"><button id="sbClose" class="pri">閉じる</button></div></div></div>
 <div id="sepo" hidden><div class="xdlg" role="dialog" aria-modal="true" aria-labelledby="seTtl"><h2 id="seTtl">SEの編集</h2>
  <div style="display:grid;gap:2px"><b id="seName"></b><span id="seFile" style="font-size:11px;color:var(--mut)"></span></div>
  <canvas id="seCv" style="width:100%;height:70px;border:1px solid var(--line);border-radius:8px;background:var(--bg)"></canvas>
@@ -252,7 +262,7 @@ let ctx=null,master=null,nextBeat=0,nextTime=0,startT=0,timer=null;
 const $=id=>document.getElementById(id);
 const TCOL=['#2f6fed','#e5484d','#2da44e','#d4a017','#8957e5','#0aa5a5','#e0702d','#d6409f'];
 const newTrack=(i)=>({name:'Track '+(i+1),wave:'sawtooth',vol:.7,mute:false,solo:false,cut:6000,sf:null,pan:0,fx:[],color:TCOL[i%TCOL.length],id:uid(),notes:[]});
-const fresh=()=>{const P={id:uid(),name:'Pattern 1',color:TCOL[0],len:16,notes:[]};return{v:1,bpm:120,len:LEN,tracks:[newTrack(0)],patterns:[P],place:[{id:uid(),pid:P.id,ti:0,s:0,l:16}],edit:P.id}};
+const fresh=()=>{const P={id:uid(),name:'Pattern 1',color:TCOL[0],len:16,notes:[]};return{v:1,bpm:120,len:LEN,tracks:[newTrack(0)],patterns:[P],place:[{id:uid(),pid:P.id,ti:0,s:0,l:16,w:4}],edit:P.id}};
 S=fresh();
 
 /* ---------- audio ---------- */
@@ -1111,11 +1121,12 @@ function fixPatterns(){try{
     const ps=[],pl=[];
     S.tracks.forEach((t,i)=>{if(Array.isArray(t.notes)&&t.notes.length){let m=0;for(const n of t.notes)m=Math.max(m,n.s+n.d);
       const P={id:uid(),name:(t.name||'Track')+' pattern',color:t.color,len:Math.max(4,Math.ceil(Math.max(Number(S.len)||16,m)/4)*4),notes:t.notes};ps.push(P);pl.push({id:uid(),pid:P.id,ti:i,s:0,l:P.len})}});
-    if(!ps.length){const P={id:uid(),name:'Pattern 1',color:S.tracks[0].color,len:16,notes:[]};ps.push(P);pl.push({id:uid(),pid:P.id,ti:0,s:0,l:16})}
+    if(!ps.length){const P={id:uid(),name:'Pattern 1',color:S.tracks[0].color,len:16,notes:[]};ps.push(P);pl.push({id:uid(),pid:P.id,ti:0,s:0,l:16,w:4})}
     S.patterns=ps;S.place=pl;S.edit=ps[0].id;S.tracks.forEach(t=>{t.notes=[]})}
   const ids=new Set(S.patterns.map(p=>p.id));
   for(const p of S.patterns){p.notes=Array.isArray(p.notes)?p.notes:[];p.len=Math.max(1,Number(p.len)||16);for(const n of p.notes)n.v=Math.max(1,Math.min(127,Math.round(n.v)||100))}
   S.place=S.place.filter(q=>ids.has(q.pid)&&S.tracks[q.ti]&&q.l>0&&q.s>=0);
+  for(const q of S.place){const w=+q.w;q.w=(isFinite(w)&&w>0)?Math.max(.5,w):q.l} // 旧データ(表示幅なし)は再生範囲と同じ幅=従来と同じ見た目
   EP=S.patterns.find(p=>p.id===S.edit)||S.patterns[0]||null;
   if(!EP){EP=newPattern(S.tracks[0].color);S.patterns.push(EP)}
   S.edit=EP.id;bufObj=null;NC=null;fixAuto()}
@@ -1141,13 +1152,18 @@ function drawSong(){
   for(let b=Math.max(0,Math.floor(sx/BW));b<=Math.min(S.len,Math.ceil((sx+vw)/BW));b++){const x=b*BW,isBar=b%4===0;g2.strokeStyle=isBar?C.bar:C.line;g2.globalAlpha=isBar?1:.4;g2.lineWidth=isBar?1.5:1;g2.beginPath();g2.moveTo(x+.5,0);g2.lineTo(x+.5,H);g2.stroke()}
   g2.globalAlpha=1;g2.lineWidth=1;g2.strokeStyle=C.line;for(let i=0;i<S.tracks.length+S.autotr.length;i++){g2.beginPath();g2.moveTo(sx,(i+1)*SRH-.5);g2.lineTo(x1,(i+1)*SRH-.5);g2.stroke()}
   const P=new Map(S.patterns.map(p=>[p.id,p]));
-  for(const q of S.place){const p=P.get(q.pid);if(!p)continue;const x=q.s*BW,w=q.l*BW,y=q.ti*SRH+3,h=SRH-6;if(x>sx+vw||x+w<sx)continue;
-    g2.globalAlpha=.85;g2.fillStyle=p.color;g2.fillRect(x,y,w,h);g2.globalAlpha=1;
+  for(const q of S.place){const p=P.get(q.pid);if(!p)continue;const x=q.s*BW,w=qpx(q),rw=q.l*BW,y=q.ti*SRH+3,h=SRH-6;if(x>sx+vw||x+Math.max(w,rw)<sx)continue;
+    g2.globalAlpha=.85;g2.fillStyle=p.color;g2.fillRect(x,y,w,h);g2.globalAlpha=1;g2.save();g2.beginPath();g2.rect(x,y,w,h);g2.clip();
     if(p.notes.length){let lo=127,hi=0;for(const n of p.notes){lo=Math.min(lo,n.p);hi=Math.max(hi,n.p)}const rg=Math.max(8,hi-lo+1),nh=Math.max(1,(h-4)/rg);g2.fillStyle='rgba(255,255,255,.85)';
       for(let k=0;k*p.len<q.l-1e-9;k++){const o=q.s+k*p.len,lim=Math.min(q.s+q.l,o+p.len);for(const n of p.notes){const st=o+n.s;if(n.p<lo||st>=lim)continue;const nx=st*BW;if(nx>sx+vw||nx+n.d*BW<sx)continue;g2.fillRect(nx,y+2+(hi-n.p)*nh,Math.max(2,Math.min(n.d,lim-st)*BW),nh)}
         if(k>0){g2.fillStyle='rgba(0,0,0,.35)';g2.fillRect(o*BW,y,1.5,h);g2.fillStyle='rgba(255,255,255,.85)'}}}
+    if(rw<w-1){g2.fillStyle='rgba(0,0,0,.5)';g2.fillRect(x+rw,y,w-rw,h);g2.fillStyle='rgba(255,255,255,.7)';g2.fillRect(x+rw-1,y,2,h)} // 表示幅より短い再生範囲: 範囲外(再生されない部分)を暗く
+    g2.restore();
+    if(rw>w+1){g2.strokeStyle=p.color;g2.lineWidth=2;g2.setLineDash([5,3]);g2.beginPath();g2.moveTo(x+w,y+h/2);g2.lineTo(x+rw,y+h/2);g2.stroke();g2.setLineDash([]);g2.lineWidth=1;g2.fillStyle=p.color;g2.fillRect(x+rw-2,y+2,3,h-4)} // 表示幅より長い再生範囲: 破線で再生される範囲を示す
     const sel=sSel===q,ed=EP===p;g2.strokeStyle=sel?C.fg:'rgba(0,0,0,.35)';g2.lineWidth=sel?2.5:1;g2.strokeRect(x+.5,y+.5,w-1,h-1);g2.lineWidth=1;
-    g2.save();g2.beginPath();g2.rect(x,y,w,h);g2.clip();g2.fillStyle='#fff';g2.font='bold 11px system-ui';g2.shadowColor='rgba(0,0,0,.6)';g2.shadowBlur=2;g2.fillText((ed?'✎ ':'')+p.name,Math.max(x,sx)+5,y+11);g2.restore()}
+    g2.save();g2.beginPath();g2.rect(x,y,w,h);g2.clip();g2.fillStyle='#fff';g2.font='bold 11px system-ui';g2.shadowColor='rgba(0,0,0,.6)';g2.shadowBlur=2;g2.fillText(fitText(g2,(ed?'✎ ':'')+p.name,Math.max(8,w-18)),Math.max(x,sx)+5,y+11);g2.restore();
+    if(RANGEMODE){g2.fillStyle='#e0902d';g2.fillRect(x+rw-3,y-2,6,h+4);g2.fillStyle='#fff';g2.fillRect(x+rw-1,y+4,2,h-8)} // 再生範囲の取っ手(オレンジ)
+    else if(sel){g2.fillStyle='rgba(255,255,255,.85)';g2.fillRect(x+w-6,y+4,2,h-8);g2.fillRect(x+w-10,y+4,2,h-8)}} // 表示幅の取っ手(右端)
   {const AM=new Map(S.autos.map(a=>[a.id,a])),RM=new Map(S.autotr.map((a,i)=>[a.id,i]));
     for(const q of S.aplace){const a=AM.get(q.aid),ri=RM.get(q.tr);if(!a||ri===undefined)continue;const x=q.s*BW,w=q.l*BW,y=(S.tracks.length+ri)*SRH+3,h=SRH-6;if(x>sx+vw||x+w<sx)continue;
       g2.globalAlpha=.85;g2.fillStyle=a.color;g2.fillRect(x,y,w,h);g2.globalAlpha=1;
@@ -1178,18 +1194,24 @@ function syncSongBar(){const P=patOf(sSel);$('pn').value=P?P.name:'';if(P)$('pc'
 cv.addEventListener('pointerdown',e=>{if(VIEW!=='song')return;
   const rc=cv.getBoundingClientRect();if(e.clientY-rc.top<RULER){seekTo((e.clientX-rc.left+roll.scrollLeft)/BW);return}
   const{x,y}=pt(e),ri=Math.floor(y/SRH);if(ri<0||ri>=S.tracks.length)return;cv.setPointerCapture(e.pointerId);
-  let h=null;for(let i=S.place.length-1;i>=0;i--){const q=S.place[i];if(q.ti===ri&&x>=q.s*BW&&x<=(q.s+q.l)*BW){h=q;break}}
+  let h=null,hm=null;const hz=e.pointerType==='touch'?24:12;
+  if(RANGEMODE){for(let i=S.place.length-1;i>=0;i--){const q=S.place[i];if(q.ti===ri&&Math.abs(x-(q.s+q.l)*BW)<=hz){h=q;hm='range';break}}}
+  if(!h)h=sgHit(x,ri);
   if(h){const now=Date.now();if(lastTap.pl===h&&now-lastTap.t<400){lastTap={pl:null,t:0};sdrag=null;openPattern(h);return}
-    lastTap={pl:h,t:now};sSel=h;selA=null;sdrag={pl:h,mode:(h.s*BW+h.l*BW-x<10&&h.l*BW>24)?'r':'move',ox:x/BW-h.s,before:snap(),moved:false}}
+    lastTap={pl:h,t:now};sSel=h;selA=null;sdrag={pl:h,mode:hm||((!RANGEMODE&&h.s*BW+qpx(h)-x<=Math.min(hz,qpx(h)*.45)&&qpx(h)>=28)?'r':'move'),ox:x/BW-h.s,before:snap(),moved:false,cx:e.clientX,cy:e.clientY,lp:null}}
   else{const s=Math.max(0,Math.floor(x/BW/4)*4);if(s>=MAXBARS*4)return;pushUndo();const P=newPattern(S.tracks[ri].color);S.patterns.push(P);
-    const q={id:uid(),pid:P.id,ti:ri,s,l:P.len};S.place.push(q);sSel=q;selA=null;fitSong();dirty();lastTap={pl:q,t:Date.now()}}
+    const q={id:uid(),pid:P.id,ti:ri,s,l:P.len,w:Math.min(P.len,DEFW)};S.place.push(q);sSel=q;selA=null;fitSong();dirty();lastTap={pl:q,t:Date.now()}}
+  if(sdrag&&e.pointerType==='touch'){const d0=sdrag;d0.lp=setTimeout(()=>{if(sdrag===d0&&!d0.moved){sdrag=null;openBlockMenu(e.clientX,e.clientY,d0.pl)}},550)} // 長押し=メニュー
   syncSongBar();draw()});
+cv.addEventListener('contextmenu',e=>{if(VIEW!=='song')return;e.preventDefault();const rc=cv.getBoundingClientRect();if(e.clientY-rc.top<RULER)return;const{x,y}=pt(e),q=sgHit(x,Math.floor(y/SRH));if(q)openBlockMenu(e.clientX,e.clientY,q)});
 cv.addEventListener('pointermove',e=>{if(VIEW!=='song'||!sdrag)return;const{x,y}=pt(e),q=sdrag.pl;
+  if(!sdrag.moved&&Math.hypot(e.clientX-sdrag.cx,e.clientY-sdrag.cy)<8)return;clearTimeout(sdrag.lp);
   if(!sdrag.moved){sdrag.moved=true;undo.push(sdrag.before);if(undo.length>100)undo.shift();redo=[]}edgeScroll(e);
-  if(sdrag.mode==='move'){q.s=Math.max(0,Math.min(MAXBARS*4-q.l,Math.round((x/BW-sdrag.ox)/4)*4));q.ti=Math.max(0,Math.min(S.tracks.length-1,Math.floor(y/SRH)))}
-  else q.l=Math.max(4,Math.min(MAXBARS*4-q.s,Math.round((x/BW-q.s)/4)*4));
+  if(sdrag.mode==='move'){q.s=Math.max(0,Math.min(MAXBARS*4-q.l,sgSnap(x/BW-sdrag.ox)));q.ti=Math.max(0,Math.min(S.tracks.length-1,Math.floor(y/SRH)))}   // 配置位置だけ
+  else if(sdrag.mode==='range'){q.l=Math.max(Math.max(.25,sgG()),Math.min(MAXBARS*4-q.s,sgSnap(x/BW-q.s)));NC=null}                                  // 再生範囲だけ
+  else{q.w=Math.max(Math.max(.5,sgG()),Math.min(Math.max(.5,S.len-q.s),sgSnap(x/BW-q.s)))}                                                          // 表示幅だけ(再生には一切影響しない)
   fitSong();draw()});
-const sEnd=()=>{if(!sdrag)return;const m=sdrag.moved;sdrag=null;if(m)dirty();draw()};
+const sEnd=()=>{if(!sdrag)return;clearTimeout(sdrag.lp);const m=sdrag.moved;sdrag=null;if(m)dirty();draw()};
 cv.addEventListener('pointerup',sEnd);cv.addEventListener('pointercancel',sEnd);
 function delPl(){if(!sSel)return;pushUndo();const P=patOf(sSel);S.place=S.place.filter(q=>q!==sSel);sSel=null;
   if(P&&P!==EP&&!S.place.some(q=>q.pid===P.id))S.patterns=S.patterns.filter(p=>p!==P);dirty();draw();syncSongBar()}
@@ -1200,7 +1222,7 @@ function delPat(){const P=patOf(sSel);if(!P)return;if(!confirm('パターン「'
 function dupPl(indep){if(!sSel)return;const q0=sSel,P=patOf(q0);if(!P)return;if(q0.s+q0.l*2>MAXBARS*4){alert('最大小節数を超えるため複製できません');return}
   pushUndo();let pid=P.id;
   if(indep){const P2={id:uid(),name:P.name+' (コピー)',color:P.color,len:P.len,notes:P.notes.map(n=>({p:n.p,s:n.s,d:n.d,v:n.v}))};S.patterns.push(P2);pid=P2.id}
-  const q={id:uid(),pid,ti:q0.ti,s:q0.s+q0.l,l:q0.l};S.place.push(q);sSel=q;selA=null;fitSong();dirty();draw();syncSongBar();
+  const q={id:uid(),pid,ti:q0.ti,s:q0.s+q0.l,l:q0.l,w:qw(q0)};S.place.push(q);sSel=q;selA=null;fitSong();dirty();draw();syncSongBar();
   $('st').textContent=indep?'独立したパターンとしてコピーしました':'同じパターンを参照する配置を追加しました'}
 function moveTrack(i,d){const j=i+d;if(j<0||j>=S.tracks.length)return;syncBuf();bufObj=null;[S.tracks[i],S.tracks[j]]=[S.tracks[j],S.tracks[i]];
   S.place.forEach(q=>{if(q.ti===i)q.ti=j;else if(q.ti===j)q.ti=i});if(sel===i)sel=j;else if(sel===j)sel=i;renderTracks();draw();dirty()}
@@ -1897,6 +1919,56 @@ function tipPos(r,tw,th,vw,vh,m){m=m==null?6:m;let top=r.bottom+8,up=false;if(to
 (function(){const els=[...document.querySelectorAll('[data-toggle]')],sync=el=>el.setAttribute('aria-pressed',el.classList.contains('on')?'true':'false');
   els.forEach(sync);const mo=new MutationObserver(ms=>{for(const m of ms)sync(m.target)});els.forEach(el=>mo.observe(el,{attributes:true,attributeFilter:['class']}));
   const seg=[$('vSong'),$('vRoll')].filter(Boolean);const sy=()=>seg.forEach(b=>b.setAttribute('aria-pressed',b.classList.contains('on')?'true':'false'));sy();const m2=new MutationObserver(sy);seg.forEach(b=>m2.observe(b,{attributes:true,attributeFilter:['class']}))})();
+/* ---------- ソングブロック: 配置位置(s) / 表示幅(w) / 再生範囲(l) の分離 ----------
+   s = 配置位置(拍)   … 移動でのみ変更
+   l = 再生範囲(拍)   … 再生エンジン(songNotes)が参照する唯一の長さ。パターンより長ければ繰り返し、短ければ範囲外は鳴らさない(音符データは消さない)
+   w = 表示幅(拍)     … 見た目だけ。再生・書き出しには一切使わない。拍単位なので、ズームしても位置・再生範囲との関係は変わらない */
+const DEFW=4;let RANGEMODE=false;
+const qw=q=>(q.w>0?q.w:q.l),qpx=q=>Math.max(qw(q)*BW,32),defW=q=>Math.min(q.l,DEFW);
+const sgG=()=>{const g=+$('sgSnap').value;return g>0?g:0};
+function sgSnap(v){const g=sgG();return g>0?Math.round(v/g)*g:Math.round(v*1000)/1000}
+function sgHit(x,ri){for(let i=S.place.length-1;i>=0;i--){const q=S.place[i];if(q.ti===ri&&x>=q.s*BW&&x<=q.s*BW+qpx(q))return q}return null}
+function fitText(g,t,mw){if(g.measureText(t).width<=mw)return t;let a=t;while(a.length>1&&g.measureText(a+'…').width>mw)a=a.slice(0,-1);return a.length>1?a+'…':''}
+function setRangeMode(on){RANGEMODE=!!on;const b=$('sgRange');b.classList.toggle('on',RANGEMODE);b.dataset.tip=RANGEMODE?'再生範囲編集モード: ON(オレンジの取っ手をドラッグ。表示幅は変わりません)':'再生範囲編集モード: OFF(右端のドラッグは表示幅だけを変更)';draw()}
+$('sgRange').onclick=()=>setRangeMode(!RANGEMODE);
+function sbDo(q,kind){if(!q)return;pushUndo();if(kind==='fit')q.w=Math.max(.5,q.l);else q.w=Math.max(.5,defW(q));dirty();draw();if(sbEd.q===q)sbSync()}
+// ---- コンテキストメニュー(右クリック / 長押し)。位置決めとキー操作は共通プルダウン(DD)の関数を再利用 ----
+let ctxM=null;function ctxClose(){if(ctxM){ctxM.el.remove();ctxM=null}}
+function menuAction(k,q){if(!S.place.includes(q))return;sSel=q;selA=null;
+  if(k==='w')sbOpen(q,'w');else if(k==='r'){setRangeMode(true);sbOpen(q,'r')}else if(k==='fit'||k==='reset')sbDo(q,k);else if(k==='open')openPattern(q);else if(k==='dup')dupPl(false);else if(k==='del')delPl()}
+function openBlockMenu(cx,cy,q){ctxClose();sSel=q;selA=null;syncSongBar();draw();
+  const items=[['w','表示幅を変更…'],['r','再生範囲を編集…'],['fit','表示幅を再生範囲に合わせる'],['reset','表示幅を初期値に戻す'],['open','ピアノロールで開く'],['dup','複製(同じパターンを参照)'],['del','ブロックを削除']];
+  const el=document.createElement('div');el.className='ddp ctxm';el.setAttribute('role','menu');el.setAttribute('aria-label','ブロックのメニュー');
+  el.innerHTML='<div class="ddl" tabindex="-1">'+items.map((it,i)=>'<div class="ddi" role="menuitem" tabindex="-1" data-i="'+i+'"><span class="dt">'+it[1]+'</span></div>').join('')+'</div>';document.body.appendChild(el);
+  const pw=Math.max(el.offsetWidth,200),pos=DD.place({left:cx,top:cy,right:cx,bottom:cy,width:0},innerWidth,innerHeight,pw,el.offsetHeight,8);el.style.left=pos.left+'px';el.style.top=pos.top+'px';el.style.maxHeight=pos.h+'px';el.style.minWidth=pw+'px';
+  const st={el,act:0,q},rows=[...el.querySelectorAll('.ddi')],paint=()=>rows.forEach((r,i)=>r.classList.toggle('act',i===st.act));ctxM=st;paint();requestAnimationFrame(()=>el.classList.add('open'));
+  const run=i=>{ctxClose();menuAction(items[i][0],q)},R=items.map(()=>({t:'o'}));
+  el.addEventListener('click',e=>{const r=e.target.closest('.ddi');if(r)run(+r.dataset.i)});el.addEventListener('mousemove',e=>{const r=e.target.closest('.ddi');if(r){st.act=+r.dataset.i;paint()}});
+  el.addEventListener('keydown',e=>{e.stopPropagation();const k=e.key;if(k==='Escape'||k==='Tab'){e.preventDefault();ctxClose();return}
+    if(['ArrowDown','ArrowUp','Home','End'].includes(k)){e.preventDefault();st.act=DD.nav(R,st.act,k);paint()}else if(k==='Enter'||k===' '){e.preventDefault();run(st.act)}});
+  el.querySelector('.ddl').focus({preventScroll:true})}
+document.addEventListener('pointerdown',e=>{if(ctxM&&!ctxM.el.contains(e.target))ctxClose()},true);
+addEventListener('keydown',e=>{if(ctxM&&e.key==='Escape'){e.stopImmediatePropagation();ctxClose()}},true);
+// ---- 数値で編集するパネル ----
+const sbo=$('sbpo'),sbEd={q:null,pushed:false,ret:null};
+function sbOpen(q,focus){sbEd.q=q;sbEd.pushed=false;sbEd.ret=document.activeElement;const p=patOf(q),t=S.tracks[q.ti];$('sbName').textContent=(p?p.name:'?')+(t?' ／ '+t.name:'');sbMsg('');sbSync();sbo.hidden=false;document.body.classList.add('fxopen');$(focus==='r'?'sbR':'sbW').focus()}
+function sbMsg(t){$('sbMsg').textContent=t||''}
+function sbSync(){const q=sbEd.q;if(!q)return;const p=patOf(q),w=qw(q),mxw=Math.max(.5,S.len-q.s);$('sbWs').max=mxw;$('sbWs').value=Math.min(w,mxw);$('sbW').value=+w.toFixed(3);$('sbR').value=+q.l.toFixed(3);
+  $('sbRb').textContent='= '+(q.l/4).toFixed(2)+' 小節(表示幅 '+(w/4).toFixed(2)+' 小節)';
+  let t='';if(p){if(q.l>p.len+1e-9)t='再生範囲がパターン('+p.len+'拍)より長いため、パターンを '+(q.l/p.len).toFixed(2)+' 回繰り返して再生します(音符は複製されません)。';
+    else if(q.l<p.len-1e-9)t='パターン先頭の '+(+q.l.toFixed(3))+' 拍だけ再生します。後ろの '+(+(p.len-q.l).toFixed(3))+' 拍の音符は再生されませんが、削除もされません。';else t='パターンを1回、そのまま再生します。'}
+  if(qw(q)<q.l-1e-9)t+=' 表示幅が再生範囲より短いので、ブロックの外(破線)まで再生されます。';else if(qw(q)>q.l+1e-9)t+=' 表示幅が再生範囲より長いので、右側の暗い部分は再生されません。';$('sbInfo').textContent=t}
+function sbSet(k,v){const q=sbEd.q;if(!q||!S.place.includes(q))return;v=+v;if(!isFinite(v))return;if(!sbEd.pushed){pushUndo();sbEd.pushed=true}
+  if(k==='w')q.w=Math.round(Math.max(.5,Math.min(Math.max(.5,S.len-q.s),v))*1000)/1000;else{q.l=Math.round(Math.max(.25,Math.min(MAXBARS*4-q.s,v))*1000)/1000;NC=null;fitSong()}
+  dirty();draw();sbSync()}
+$('sbWs').oninput=e=>sbSet('w',e.target.value);$('sbW').onchange=e=>{sbSet('w',e.target.value);sbEd.pushed=false};$('sbR').onchange=e=>{sbSet('l',e.target.value);sbEd.pushed=false};$('sbWs').onchange=()=>{sbEd.pushed=false};
+$('sbFit').onclick=()=>{sbDo(sbEd.q,'fit');sbMsg('表示幅を再生範囲に合わせました(再生内容は変わりません)')};$('sbReset').onclick=()=>{sbDo(sbEd.q,'reset');sbMsg('表示幅を初期値に戻しました(再生内容は変わりません)')};
+function sbClose(){sbo.hidden=true;document.body.classList.remove('fxopen');sbEd.q=null;if(sbEd.ret&&sbEd.ret.isConnected)sbEd.ret.focus()}
+$('sbClose').onclick=sbClose;
+$('sgSizes').onclick=()=>{if(!sSel){$('st').textContent='表示幅・再生範囲を編集するブロックを選んでください';return}sbOpen(sSel,'w')};
+sbo.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Tab'){const f=[...sbo.querySelectorAll('button:not([disabled]),input:not([disabled])')].filter(x=>x.offsetParent!==null);if(f.length){const i=f.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus()}}}});
+addEventListener('keydown',e=>{if(sbo.hidden||e.key!=='Escape'||(typeof DD!=='undefined'&&DD.openNow()))return;e.stopImmediatePropagation();sbClose()},true);
+
 /* ---------- タップ消去のON/OFF / 携帯(タッチ端末)の初期設定 ---------- */
 function tapdelUI(){const b=$('tapdel');b.classList.toggle('on',TAPDEL);b.dataset.tip=TAPDEL?'タップ消去: ON(音符をもう一度タップで削除)':'タップ消去: OFF(タップでは削除しません)'}
 $('tapdel').onclick=()=>{TAPDEL=!TAPDEL;try{localStorage.setItem('daw-tapdel',TAPDEL?'1':'0')}catch(_){}tapdelUI()};tapdelUI();
