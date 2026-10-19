@@ -1,7 +1,7 @@
 
 "use strict";
 let BW=48,RH=16;const LO=0,HI=128,ROWS=HI-LO,SNAP=0.25,LEN=16;
-let S,sel=0,selNote=null,undo=[],redo=[],lastDur=1,playing=false,playBeat=0,loop=true;
+let S,sel=0,selNote=null,undo=[],redo=[],lastDur=1,playing=false,playBeat=0,loop=true,blockPlayback=null;
 let ctx=null,master=null,nextBeat=0,nextTime=0,startT=0,timer=null;
 const $=id=>document.getElementById(id);
 const TCOL=['#2f6fed','#e5484d','#2da44e','#d4a017','#8957e5','#0aa5a5','#e0702d','#d6409f'];
@@ -32,36 +32,39 @@ const spb=()=>60/S.bpm;
 function schedule(){
   const ahead=ctx.currentTime+.15;
   while(nextTime<ahead){
-    const b0=nextBeat,b1=b0+SNAP/ (1) ;
-    // schedule notes starting in [b0, b0+0.25)
-    for(const e of songNotes())if(e.s>=b0-1e-6&&e.s<b0+SNAP-1e-6&&audible(e.t)){VB=e.s;voice(e.t,e.p,e.v,nextTime+(e.s-b0)*spb(),e.d*spb());VB=null}
-    for(const tr of AT())for(const c of tr.clips)if(c.s>=b0-1e-6&&c.s<b0+SNAP-1e-6)startClip(c,tr,nextTime+(c.s-b0)*spb(),c.o,Math.min(c.d,(S.len-c.s)*spb()),true);
-    schedAuto(b0,nextTime,spb());
+    const b0=nextBeat, end=blockPlayback?blockPlayback.end:S.len;
+    for(const e of songNotes())if(e.s>=b0-1e-6&&e.s<b0+SNAP-1e-6&&(!blockPlayback||(e.s>=blockPlayback.start-1e-6&&e.s<blockPlayback.end-1e-6&&e.ti===blockPlayback.ti))&&audible(e.t)){
+      VB=e.s;voice(e.t,e.p,e.v,nextTime+(e.s-b0)*spb(),Math.min(e.d,Math.max(0,end-e.s))*spb());VB=null
+    }
+    if(!blockPlayback){
+      for(const tr of AT())for(const c of tr.clips)if(c.s>=b0-1e-6&&c.s<b0+SNAP-1e-6)startClip(c,tr,nextTime+(c.s-b0)*spb(),c.o,Math.min(c.d,(S.len-c.s)*spb()),true);
+      schedAuto(b0,nextTime,spb());
+    }
     nextTime+=SNAP*spb();nextBeat+=SNAP;
-    if(nextBeat>=S.len-1e-6){
-      if(loop){nextBeat=0}else{setTimeout(()=>{if(playing&&playBeat>=S.len-.1)stop(true)},(nextTime-ctx.currentTime)*1000);nextBeat=1e9;}
+    if(nextBeat>=end-1e-6){
+      if(loop){nextBeat=blockPlayback?blockPlayback.start:0}
+      else{const stopAt=end;setTimeout(()=>{if(playing&&playBeat>=stopAt-.1)stop(false)},Math.max(0,(nextTime-ctx.currentTime)*1000));nextBeat=1e9;}
     }
   }
 }
 function play(){
-  if(playing)return;initAudio();playing=true;
+  if(playing)return;blockPlayback=null;const bb=$('blockPlay');if(bb){bb.classList.remove('on');bb.innerHTML=ico('play')}initAudio();playing=true;
   nextBeat=Math.floor(playBeat/SNAP)*SNAP;nextTime=ctx.currentTime+.06;startT=nextTime-nextBeat*spb();
   startRef={t:nextTime,b:nextBeat};startPartial();
   timer=setInterval(schedule,25);schedule();setPlayUI(true);requestAnimationFrame(frame);
 }
 let startRef={t:0,b:0};
-function pause(){playing=false;clearInterval(timer);ASRC.forEach(x=>{try{x.stop()}catch(e){}});ASRC.clear();resetAuto();setPlayUI(false)}
+function pause(){playing=false;blockPlayback=null;const bb=$('blockPlay');if(bb){bb.classList.remove('on');bb.innerHTML=ico('play');bb.setAttribute('aria-label','ブロック内を再生');bb.dataset.tip='選択中のソングブロックだけ再生'}clearInterval(timer);ASRC.forEach(x=>{try{x.stop()}catch(e){}});ASRC.clear();resetAuto();setPlayUI(false)}
 let prevPx=0;
 function followPlayhead(){const px=playBeat*BW,v=x=>x>=roll.scrollLeft&&x<=roll.scrollLeft+roll.clientWidth-24;if(v(prevPx)&&!v(px))roll.scrollLeft=Math.max(0,px-60);prevPx=px}
 function stop(rewind){pause();if(rewind){playBeat=0;roll.scrollLeft=0}draw();upPos()}
 function frame(){
   if(!playing)return;
   let b=startRef.b+(ctx.currentTime-startRef.t)/spb();
-  if(loop&&nextBeat<1e8){
-    // keep playhead in sync across loop wraps
-    b=((b%S.len)+S.len)%S.len;
-  }else if(b>=S.len){b=S.len}
-  playBeat=Math.max(0,b);followPlayhead();draw();upPos();requestAnimationFrame(frame);
+  const lo=blockPlayback?blockPlayback.start:0,hi=blockPlayback?blockPlayback.end:S.len;
+  if(loop&&nextBeat<1e8){if(b>=hi)b=lo+((b-lo)%(hi-lo));}
+  else if(b>=hi)b=hi;
+  playBeat=Math.max(lo,b);followPlayhead();draw();upPos();requestAnimationFrame(frame);
 }
 function upPos(){const bar=Math.floor(playBeat/4)+1,bt=Math.floor(playBeat%4)+1;$('pos').textContent=bar+':'+bt}
 
@@ -310,6 +313,15 @@ function updateHS(){const hs=$('hs'),T=$('hsT'),tw=hs.clientWidth,W=S.len*BW,vw=
 
 /* ---------- controls ---------- */
 $('play').onclick=()=>playing?pause():play();
+$('blockPlay').onclick=()=>{
+  if(blockPlayback&&playing){stop(false);return}
+  if(playing)return;
+  const q=sSel&&S.place.includes(sSel)?sSel:null;
+  if(!q){$('st').textContent='ソング画面で再生したいブロックを選択してから開いてください';return}
+  const start=Math.max(0,q.s),end=Math.min(S.len,q.s+q.l);if(end-start<=0)return;
+  blockPlayback={start,end,ti:q.ti,pid:q.pid};playBeat=start;initAudio();playing=true;nextBeat=start;nextTime=ctx.currentTime+.06;startT=nextTime-start*spb();startRef={t:nextTime,b:start};
+  timer=setInterval(schedule,25);schedule();setPlayUI(true);$('blockPlay').classList.add('on');$('blockPlay').innerHTML=ico('pause');$('blockPlay').setAttribute('aria-label','ブロック再生を停止');$('blockPlay').dataset.tip='ブロック再生を停止';requestAnimationFrame(frame);
+};
 $('stop').onclick=()=>stop(true);
 $('rew').onclick=()=>{const w=playing;if(w)pause();playBeat=0;if(w)play();else{draw();upPos()}};
 $('bpm').onchange=e=>{const v=Math.max(40,Math.min(240,+e.target.value||120));e.target.value=v;
@@ -885,7 +897,7 @@ function syncBuf(){if(EP&&bufObj)EP.notes=bufObj.notes;S.tracks.forEach((t,i)=>{
 function songNotes(){if(NC)return NC;NC=[];const P=new Map(S.patterns.map(p=>[p.id,p]));
   for(const pl of S.place){const p=P.get(pl.pid),t=S.tracks[pl.ti];if(!p||!t)continue;
     for(let k=0;k*p.len<pl.l-1e-9;k++){const o=pl.s+k*p.len,lim=Math.min(pl.s+pl.l,o+p.len);
-      for(const n of p.notes){const st=o+n.s;if(n.s>=p.len||st>=lim)continue;NC.push({t,p:n.p,s:st,d:Math.min(n.d,lim-st),v:n.v})}}}
+      for(const n of p.notes){const st=o+n.s;if(n.s>=p.len||st>=lim)continue;NC.push({t,p:n.p,s:st,d:Math.min(n.d,lim-st),v:n.v,ti:pl.ti})}}}
   return NC}
 function relPB(){if(!EP)return -1;for(const q of S.place)if(q.pid===EP.id&&playBeat>=q.s&&playBeat<q.s+q.l)return(playBeat-q.s)%EP.len;return -1}
 function updInfo(){if(EP){const n=S.place.filter(q=>q.pid===EP.id).length;$('pinfo').textContent='編集中: '+EP.name+' (配置'+n+'箇所)';if(document.activeElement!==$('plen'))$('plen').value=EP.len/4}}
