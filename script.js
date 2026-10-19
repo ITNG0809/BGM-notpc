@@ -605,13 +605,13 @@ function encodeWav(b,g){g=g==null?1:g;const n=b.length,sr=b.sampleRate,L=b.getCh
   return{blob:new Blob([o.buffer],{type:'audio/wav'}),peak:pk}}
 async function exportWav(){ // 従来の「そのままWAV書き出し」(mix.wav)。モーダルを使わない呼び出し用に残してある
   const sr=+$('sr').value;$('st').textContent='WAVを書き出し中…(長い曲は数秒かかります)';
-  try{const b=await renderMix(sr),r=encodeWav(b,1);$('st').textContent='WAV生成完了'+(r.peak>1?' (クリッピングあり)':'');dl('mix.wav',r.blob)}
+  try{const b=await renderMix(sr),r=encodeWav(b,1);$('st').textContent='WAV生成完了'+(r.peak>1?' (クリッピングあり)':'');dl((xDefName()+'.wav'),r.blob)}
   catch(e){if(e&&e.cancel){$('st').textContent=e.message;if(e.message==='書き出す音符がありません')alert(e.message);return}$('st').textContent='WAV書き出し失敗: '+e.message;alert('WAVを生成できませんでした: '+e.message)}}
 /* ---------- ダウンロード用モーダル(形式・音量・プレビュー) ---------- */
 const xo=$('xpo'),xs={buf:null,key:'',p:null,peak:0,prev:null,busy:false,abort:null,ret:null,fmts:[]};
 const XEXT=['wav','webm','ogg','m4a','mp3','mp4','opus','aac'];
 function xClean(n){n=String(n==null?'':n).replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').trim().replace(/^\.+/,'');const m=n.match(/\.([A-Za-z0-9]{2,4})$/);if(m&&XEXT.includes(m[1].toLowerCase()))n=n.slice(0,-m[0].length);return n.replace(/[. ]+$/,'').slice(0,100)}
-function xDefName(){const d=new Date(),z=v=>String(v).padStart(2,'0');return 'song-'+d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())}
+function xDefName(){return xClean(currentProjectName())||'BGM'}
 function xFormats(){const L=[{id:'wav',label:'WAV (16bit PCM・非圧縮)',ext:'wav'}];
   const ok=t=>{try{return MediaRecorder.isTypeSupported(t)}catch(e){return false}};
   const can=typeof MediaRecorder!=='undefined'&&typeof AudioContext!=='undefined'&&typeof AudioContext.prototype.createMediaStreamDestination==='function';
@@ -655,7 +655,7 @@ async function xDownload(){if(xs.busy)return;const base=xClean($('xName').value)
   finally{xs.abort=null}}
 function xFill(){const sel=$('xFmt'),cur=sel.value;xs.fmts=xFormats();sel.innerHTML=xs.fmts.map(f=>'<option value="'+f.id+'">'+f.label+'</option>').join('');sel.value=xs.fmts.some(f=>f.id===cur)?cur:'wav';
   $('xExt').textContent='.'+xFmt().ext;$('xFmtNote').textContent=xs.fmts.length>1?'このブラウザで書き出せる形式だけを表示しています。圧縮形式は曲の長さと同じ時間をかけて変換します。':'このブラウザではWAV以外の形式を書き出せないため、WAVのみ表示しています。'}
-function openExport(){xs.ret=document.activeElement;xFill();if(!xClean($('xName').value))$('xName').value=xDefName();$('xSr').value=$('sr').value;xMsg('');xProg(0);xo.hidden=false;document.body.classList.add('fxopen');$('xName').focus();$('xName').select()}
+function openExport(){xs.ret=document.activeElement;xFill();$('xName').value=xDefName();$('xSr').value=$('sr').value;xMsg('');xProg(0);xo.hidden=false;document.body.classList.add('fxopen');$('xName').focus();$('xName').select()}
 function xClose(){if(xs.abort){xs.abort.abort=true;if(xs.abort.stop)xs.abort.stop()}xStopPrev();xBusy(false);xo.hidden=true;document.body.classList.remove('fxopen');xs.buf=null;xs.key='';xs.p=null;xs.peak=0;if(xs.ret&&xs.ret.isConnected)xs.ret.focus()}
 $('xCancel').onclick=xClose;$('xGo').onclick=xDownload;$('xPrev').onclick=xPreview;
 $('xFmt').onchange=()=>{$('xExt').textContent='.'+xFmt().ext};$('xSr').onchange=()=>{xStopPrev();xMsg('')};
@@ -677,7 +677,7 @@ function exportMidi(){
   S.tracks.forEach((t,i)=>{const c=CHS[i%15],ev=[];if(t.sf)ev.push({t:0,o:-1,b:[0xC0|c,t.sf.p&127]});
     for(const n of songNotes().filter(e=>e.t===t)){const a=Math.round(n.s*PPQ),z=Math.max(a+1,Math.round((n.s+n.d)*PPQ));ev.push({t:a,o:1,b:[0x90|c,n.p&127,n.v&127]},{t:z,o:0,b:[0x80|c,n.p&127,0]})}
     parts.push(mk(ev))});
-  dl('song.mid',new Blob([cat(parts)],{type:'audio/midi'}));
+  dl((xDefName()+'.mid'),new Blob([cat(parts)],{type:'audio/midi'}));
 }
 function importMidi(buf){
   const u=new Uint8Array(buf),dv=new DataView(buf);
