@@ -227,7 +227,7 @@ cv.addEventListener('pointerdown',e=>{
     drag={mode:'move',n,ox:x/BW-n.s,moved:false,n0s:n.s,n0p:n.p,was:true,mod:false,cx:e.clientX,cy:e.clientY,snap:[...selSet].map(m=>({m,s:m.s,p:m.p}))};
     draw();return;
   }
-  if(e.pointerType==='mouse'&&e.button===0&&e.clientY-rc.top>=RULER){const {x,y}=pt(e),n=hit(x,y);if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）';return}}
+  if(e.pointerType==='mouse'&&e.button===0&&e.clientY-rc.top>=RULER){const {x,y}=pt(e),n=hit(x,y);if(n&&((n.s+n.d)*BW-x)>10){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）';return}}
   syncBuf();if(e.clientY-rc.top<RULER){if(EP){$('st').textContent='再生位置はソング画面のルーラーで移動できます';return}seekTo((e.clientX-rc.left+roll.scrollLeft)/BW);return}
   initAudio();const{x,y}=pt(e),t=S.tracks[sel];let n=hit(x,y);
   const mod=e.shiftKey||e.ctrlKey||e.metaKey;const was=!!n;
