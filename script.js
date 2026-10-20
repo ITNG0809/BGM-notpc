@@ -231,11 +231,6 @@ cv.addEventListener('pointerdown',e=>{
   syncBuf();if(e.clientY-rc.top<RULER){if(EP){$('st').textContent='再生位置はソング画面のルーラーで移動できます';return}seekTo((e.clientX-rc.left+roll.scrollLeft)/BW);return}
   initAudio();const{x,y}=pt(e),t=S.tracks[sel];let n=hit(x,y);
   const mod=e.shiftKey||e.ctrlKey||e.metaKey;const was=!!n;
-  // タッチ限定：トラック上の音符が1個だけなら、その音符をもう一度タップして削除できる。
-  // マウス操作と、複数音符の編集には影響させない。
-  if(e.pointerType==='touch'&&MODE==='draw'&&!mod&&n&&S.tracks[sel].notes.length===1){
-    cv.setPointerCapture(e.pointerId);drag={mode:'tapdelete',n,cx:e.clientX,cy:e.clientY,moved:false};return;
-  }
   // 選択枠はどこをつかんでも移動可能。右端はマウス・タッチ共通の伸縮ハンドル。
   const sb=selectionBounds();
   if(e.button===0&&sb&&selSet.size&&y>=sb.y-5&&y<=sb.y+sb.h+5&&x>=sb.x-5&&x<=sb.x+sb.w+5){
@@ -260,7 +255,7 @@ cv.addEventListener('pointerdown',e=>{
     const s=Math.max(0,Math.min(S.len-lastDur,Math.floor(x/BW/GRID+1e-9)*GRID));
     n={p,s,d:lastDur,v:100};t.notes.push(n);selSet.clear();selSet.add(n)}
   selNote=n;voice(t,n.p,n.v,ctx.currentTime,.25);
-  drag={mode,n,ox:x/BW-n.s,moved:false,n0s:n.s,n0p:n.p,was,mod,cx:e.clientX,cy:e.clientY,snap:[...selSet].map(m=>({m,s:m.s,p:m.p}))};draw();
+  drag={mode,n,ox:x/BW-n.s,moved:false,n0s:n.s,n0p:n.p,was,mod,pointerType:e.pointerType,cx:e.clientX,cy:e.clientY,snap:[...selSet].map(m=>({m,s:m.s,p:m.p}))};draw();
 });
 cv.addEventListener('pointermove',e=>{
   if(TP.has(e.pointerId))TP.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch){pinchMove();return}
@@ -304,11 +299,10 @@ cv.addEventListener('pointermove',e=>{
 const endDrag=e=>{if(e&&TP.has(e.pointerId))TP.delete(e.pointerId);if(pinch){if(TP.size<2)pinch=null;return}
   if(!drag)return;const d=drag;drag=null;
   if(d.mode==='tapadd'){if(!d.moved&&e&&e.type==='pointerup'&&performance.now()-d.t0<700)tapAdd(d.x,d.y);return}
-  if(d.mode==='tapdelete'){if(!d.moved&&e&&e.type==='pointerup'){tapErase(d.n)}return}
   if(d.mode==='pan')return;
   if(d.mode==='scaleSelection'||d.mode==='moveSelection'){if(d.moved)dirty();draw();return}
   if(d.mode==='box'){selNote=selSet.size===1?[...selSet][0]:null;draw();return}
-  if(d.was&&!d.moved&&!d.mod&&TAPDEL&&MODE==='draw'&&e&&e.type==='pointerup'){tapErase(d.n);return} // 動かさずにもう一度タップ → 削除(pointerdownで取った Undo を1回分そのまま使う)
+  if(d.pointerType==='touch'&&d.was&&!d.moved&&!d.mod&&TAPDEL&&MODE==='draw'&&e&&e.type==='pointerup'){tapErase(d.n);return} // 動かさずにもう一度タップ → 削除(pointerdownで取った Undo を1回分そのまま使う)
   dirty()};
 function tapErase(n){const t=S.tracks[sel];t.notes=t.notes.filter(x=>x!==n);selSet.delete(n);if(selNote===n)selNote=null;draw();dirty();$('st').textContent='音符を削除しました(空いた場所をタップで追加 / ↶で元に戻せます)'}
 function tapAdd(x,y){const t=S.tracks[sel];pushUndo();if(x>=S.len*BW)S.len=Math.min(MAXBARS*4,Math.ceil(x/BW/4)*4);
