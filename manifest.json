@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Scratch Touch Batch Fill (Prototype)",
+  "version": "0.1.0",
+  "description": "Prototype button for testing a touch-friendly batch-fill workflow in the Scratch paint editor.",
+  "content_scripts": [
+    {
+      "matches": ["https://scratch.mit.edu/*"],
+      "js": ["content.js"],
+      "css": ["style.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
