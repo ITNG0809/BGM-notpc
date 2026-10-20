@@ -217,19 +217,23 @@ function boxSelect(){const d=drag,xa=Math.min(d.x0,d.x1),xb=Math.max(d.x0,d.x1),
 cv.addEventListener('pointerdown',e=>{
   const rc=cv.getBoundingClientRect();
   if(VIEW!=='roll')return;
-  // PC操作: 左クリック=音符を削除、右クリック=空き場所に打ち込み。選択枠の右端は一括伸縮。
-  if(e.pointerType==='mouse'&&e.clientY-rc.top>=RULER){
-    const {x,y}=pt(e), n=hit(x,y), sb=selectionBounds();
-    if(e.button===0&&sb&&selSet.size&&Math.abs(x-(sb.x+sb.w))<=8&&y>=sb.y-4&&y<=sb.y+sb.h+4){
-      e.preventDefault();e.stopPropagation();cv.setPointerCapture(e.pointerId);pushUndo();
-      drag={mode:'scaleSelection',x0:x,startBeat:sb.s,origW:sb.w/BW,notes:sb.notes.map(m=>({m,s:m.s,d:m.d})),cx:e.clientX,cy:e.clientY,moved:false};return;
-    }
-    if(e.button===0){if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）'}return}
-    if(e.button===2){e.preventDefault();e.stopPropagation();if(!n){initAudio();tapAdd(x,y)}return} // 右クリックは空き場所への打ち込み専用。既存音符は削除も移動もしない
+  // 右クリックは空き場所への打ち込み専用。既存音符は変更しない。
+  if(e.pointerType==='mouse'&&e.button===2&&e.clientY-rc.top>=RULER){
+    const {x,y}=pt(e),n=hit(x,y);e.preventDefault();e.stopPropagation();if(!n){initAudio();tapAdd(x,y)}return;
   }
+  if(e.pointerType==='mouse'&&e.button===0&&e.clientY-rc.top>=RULER){const {x,y}=pt(e),n=hit(x,y);if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）';return}}
   syncBuf();if(e.clientY-rc.top<RULER){if(EP){$('st').textContent='再生位置はソング画面のルーラーで移動できます';return}seekTo((e.clientX-rc.left+roll.scrollLeft)/BW);return}
   initAudio();const{x,y}=pt(e),t=S.tracks[sel];let n=hit(x,y);
   const mod=e.shiftKey||e.ctrlKey||e.metaKey;const was=!!n;
+  // 選択枠はどこをつかんでも移動可能。右端はマウス・タッチ共通の伸縮ハンドル。
+  const sb=selectionBounds();
+  if(e.button===0&&sb&&selSet.size&&y>=sb.y-5&&y<=sb.y+sb.h+5&&x>=sb.x-5&&x<=sb.x+sb.w+5){
+    const edge=Math.abs(x-(sb.x+sb.w))<=10;
+    cv.setPointerCapture(e.pointerId);e.preventDefault();pushUndo();
+    if(edge){drag={mode:'scaleSelection',x0:x,startBeat:sb.s,origW:sb.w/BW,notes:sb.notes.map(m=>({m,s:m.s,d:m.d,p:m.p})),cx:e.clientX,cy:e.clientY,moved:false};}
+    else{drag={mode:'moveSelection',x0:x,y0:y,notes:sb.notes.map(m=>({m,s:m.s,p:m.p,d:m.d})),cx:e.clientX,cy:e.clientY,moved:false};}
+    return;
+  }
   if(e.pointerType==='touch'){ // タッチ: 2本指=ズーム / 空き領域のドラッグ=スクロール / タップ(指を離したとき)=追加
     TP.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(TP.size>=2){if(!drag||drag.mode==='tapadd'||drag.mode==='pan')startPinch();return}
@@ -251,6 +255,16 @@ cv.addEventListener('pointermove',e=>{
   if(TP.has(e.pointerId))TP.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch){pinchMove();return}
   if(!drag)return;const{x,y}=pt(e);if(drag.mode==='tapadd'||drag.mode==='pan'){tapPan(e);return}
   if(drag.mode==='box'){edgeScroll(e);drag.x1=x;drag.y1=y;boxSelect();draw();return}
+  if(drag.mode==='moveSelection'){
+    if(!drag.moved&&Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)<4)return;
+    const dx=Math.round(((x-drag.x0)/BW)/GRID)*GRID;
+    const dp=-Math.round((y-drag.y0)/RH);
+    const minS=Math.min(...drag.notes.map(o=>o.s)),maxE=Math.max(...drag.notes.map(o=>o.s+o.d));
+    const minP=Math.min(...drag.notes.map(o=>o.p)),maxP=Math.max(...drag.notes.map(o=>o.p));
+    const ds=Math.max(-minS,Math.min(S.len-maxE,dx)),py=Math.max(LO-minP,Math.min(HI-1-maxP,dp));
+    for(const o of drag.notes){o.m.s=o.s+ds;o.m.p=o.p+py;}
+    drag.moved=true;draw();return;
+  }
   if(drag.mode==='scaleSelection'){
     if(!drag.moved&&Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)<4)return;
     const ratio=Math.max(GRID/Math.max(drag.origW,GRID),Math.min((S.len-drag.startBeat)/Math.max(drag.origW,GRID),(x/BW-drag.startBeat)/Math.max(drag.origW,GRID))); 
@@ -280,7 +294,7 @@ const endDrag=e=>{if(e&&TP.has(e.pointerId))TP.delete(e.pointerId);if(pinch){if(
   if(!drag)return;const d=drag;drag=null;
   if(d.mode==='tapadd'){if(!d.moved&&e&&e.type==='pointerup'&&performance.now()-d.t0<700)tapAdd(d.x,d.y);return}
   if(d.mode==='pan')return;
-  if(d.mode==='scaleSelection'){if(d.moved)dirty();draw();return}
+  if(d.mode==='scaleSelection'||d.mode==='moveSelection'){if(d.moved)dirty();draw();return}
   if(d.mode==='box'){selNote=selSet.size===1?[...selSet][0]:null;draw();return}
   if(d.was&&!d.moved&&!d.mod&&TAPDEL&&MODE==='draw'&&e&&e.type==='pointerup'){tapErase(d.n);return} // 動かさずにもう一度タップ → 削除(pointerdownで取った Undo を1回分そのまま使う)
   dirty()};
