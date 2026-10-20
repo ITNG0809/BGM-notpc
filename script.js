@@ -222,7 +222,7 @@ cv.addEventListener('pointerdown',e=>{
     const {x,y}=pt(e), n=hit(x,y), sb=selectionBounds();
     if(e.button===0&&sb&&selSet.size&&Math.abs(x-(sb.x+sb.w))<=8&&y>=sb.y-4&&y<=sb.y+sb.h+4){
       e.preventDefault();e.stopPropagation();cv.setPointerCapture(e.pointerId);pushUndo();
-      drag={mode:'scaleSelection',x0:x,startBeat:sb.s,origW:sb.w/BW,notes:sb.notes.map(m=>({m,d:m.d})),cx:e.clientX,cy:e.clientY,moved:false};return;
+      drag={mode:'scaleSelection',x0:x,startBeat:sb.s,origW:sb.w/BW,notes:sb.notes.map(m=>({m,s:m.s,d:m.d})),cx:e.clientX,cy:e.clientY,moved:false};return;
     }
     if(e.button===0){if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）'}return}
     if(e.button===2){e.preventDefault();e.stopPropagation();if(!n){initAudio();tapAdd(x,y)}return} // 右クリックは空き場所への打ち込み専用。既存音符は削除も移動もしない
@@ -254,8 +254,13 @@ cv.addEventListener('pointermove',e=>{
   if(drag.mode==='scaleSelection'){
     if(!drag.moved&&Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)<4)return;
     const ratio=Math.max(GRID/Math.max(drag.origW,GRID),Math.min((S.len-drag.startBeat)/Math.max(drag.origW,GRID),(x/BW-drag.startBeat)/Math.max(drag.origW,GRID))); 
-    // 選択範囲の左端を基準に音符の長さだけを比例伸縮。各長さは現在の拍グリッドへ丸める。
-    for(const o of drag.notes){const maxD=Math.max(GRID,S.len-o.m.s);o.m.d=Math.max(GRID,Math.min(maxD,Math.round((o.d*ratio)/GRID)*GRID));}
+    // 選択範囲の左端を基準に、音符の開始位置と長さの両方を比例伸縮する。
+    // 開始位置・長さは拍グリッドにスナップし、曲の末尾を越えないようにする。
+    for(const o of drag.notes){
+      const newS=Math.max(0,Math.min(S.len-GRID,Math.round((drag.startBeat+(o.s-drag.startBeat)*ratio)/GRID)*GRID));
+      const newD=Math.max(GRID,Math.min(S.len-newS,Math.round((o.d*ratio)/GRID)*GRID));
+      o.m.s=newS;o.m.d=newD;
+    }
     drag.moved=true;draw();return;
   }
   const n=drag.n;if(!drag.moved&&Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)<8)return;autoExtend(e,x);
