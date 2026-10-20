@@ -217,21 +217,15 @@ function boxSelect(){const d=drag,xa=Math.min(d.x0,d.x1),xb=Math.max(d.x0,d.x1),
 cv.addEventListener('pointerdown',e=>{
   const rc=cv.getBoundingClientRect();
   if(VIEW!=='roll')return;
-  // PC操作: 左クリック=音符を削除、右クリック=空き場所に打ち込み。
-  // 選択枠の右端ハンドルはマウスとタッチの両方でドラッグ可能。
-  if(e.clientY-rc.top>=RULER){
+  // PC操作: 左クリック=音符を削除、右クリック=空き場所に打ち込み。選択枠の右端は一括伸縮。
+  if(e.pointerType==='mouse'&&e.clientY-rc.top>=RULER){
     const {x,y}=pt(e), n=hit(x,y), sb=selectionBounds();
-    const isPrimaryMouse=e.pointerType==='mouse'&&e.button===0;
-    const isTouch=e.pointerType==='touch';
-    const handlePad=isTouch?30:10;
-    if((isPrimaryMouse||isTouch)&&sb&&selSet.size&&Math.abs(x-(sb.x+sb.w))<=handlePad&&y>=sb.y-handlePad&&y<=sb.y+sb.h+handlePad){
+    if(e.button===0&&sb&&selSet.size&&Math.abs(x-(sb.x+sb.w))<=8&&y>=sb.y-4&&y<=sb.y+sb.h+4){
       e.preventDefault();e.stopPropagation();cv.setPointerCapture(e.pointerId);pushUndo();
-      drag={mode:'scaleSelection',startBeat:sb.s,origW:sb.w/BW,notes:sb.notes.map(m=>({m,d:m.d})),cx:e.clientX,cy:e.clientY,moved:false};return;
+      drag={mode:'scaleSelection',x0:x,startBeat:sb.s,origW:sb.w/BW,notes:sb.notes.map(m=>({m,d:m.d})),cx:e.clientX,cy:e.clientY,moved:false};return;
     }
-    if(e.pointerType==='mouse'){
-      if(e.button===0){if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）'}return}
-      if(e.button===2){e.preventDefault();if(!n){initAudio();tapAdd(x,y)}return}
-    }
+    if(e.button===0){if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）'}return}
+    if(e.button===2){e.preventDefault();e.stopPropagation();if(!n){initAudio();tapAdd(x,y)}return} // 右クリックは空き場所への打ち込み専用。既存音符は削除も移動もしない
   }
   syncBuf();if(e.clientY-rc.top<RULER){if(EP){$('st').textContent='再生位置はソング画面のルーラーで移動できます';return}seekTo((e.clientX-rc.left+roll.scrollLeft)/BW);return}
   initAudio();const{x,y}=pt(e),t=S.tracks[sel];let n=hit(x,y);
