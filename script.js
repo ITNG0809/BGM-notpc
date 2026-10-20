@@ -208,7 +208,14 @@ function boxSelect(){const d=drag,xa=Math.min(d.x0,d.x1),xb=Math.max(d.x0,d.x1),
   for(const n of S.tracks[sel].notes){const nx0=n.s*BW,nx1=(n.s+n.d)*BW,ny0=(HI-1-n.p)*RH,ny1=ny0+RH;if(nx1>=xa&&nx0<=xb&&ny1>=ya&&ny0<=yb)selSet.add(n)}}
 cv.addEventListener('pointerdown',e=>{
   const rc=cv.getBoundingClientRect();
-  if(VIEW!=='roll')return;syncBuf();if(e.clientY-rc.top<RULER){if(EP){$('st').textContent='再生位置はソング画面のルーラーで移動できます';return}seekTo((e.clientX-rc.left+roll.scrollLeft)/BW);return}
+  if(VIEW!=='roll')return;
+  // PC操作: 左クリック=音符を削除、右クリック=空き場所に打ち込み。タッチ操作は従来どおり。
+  if(e.pointerType==='mouse'&&e.clientY-rc.top>=RULER){
+    const {x,y}=pt(e), n=hit(x,y);
+    if(e.button===0){if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）'}return}
+    if(e.button===2){e.preventDefault();if(!n){initAudio();tapAdd(x,y)}return}
+  }
+  syncBuf();if(e.clientY-rc.top<RULER){if(EP){$('st').textContent='再生位置はソング画面のルーラーで移動できます';return}seekTo((e.clientX-rc.left+roll.scrollLeft)/BW);return}
   initAudio();const{x,y}=pt(e),t=S.tracks[sel];let n=hit(x,y);
   const mod=e.shiftKey||e.ctrlKey||e.metaKey;const was=!!n;
   if(e.pointerType==='touch'){ // タッチ: 2本指=ズーム / 空き領域のドラッグ=スクロール / タップ(指を離したとき)=追加
@@ -261,7 +268,7 @@ function startPinch(){const[a,b]=[...TP.values()];drag=null;pinch={dx:Math.max(2
 function pinchMove(){const v=[...TP.values()];if(v.length<2)return;const dx=Math.abs(v[0].x-v[1].x),dy=Math.abs(v[0].y-v[1].y);if(dx>=20)zoomH(pinch.zh*dx/pinch.dx);if(dy>=20)zoomV(pinch.zv*dy/pinch.dy)}
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 function deleteNotes(arr){if(!arr.length)return;pushUndo();const t=S.tracks[sel],ds=new Set(arr);t.notes=t.notes.filter(n=>!ds.has(n));selSet.clear();selNote=null;draw();dirty()}
-cv.addEventListener('contextmenu',e=>{e.preventDefault();if(VIEW!=='roll')return;const{x,y}=pt(e),n=hit(x,y);if(n)deleteNotes(selSet.has(n)?selList():[n])});
+cv.addEventListener('contextmenu',e=>{if(VIEW==='roll')e.preventDefault()});
 function delSel(){const a=selList();if(selNote&&!a.includes(selNote)&&S.tracks[sel].notes.includes(selNote))a.push(selNote);deleteNotes(a)}
 function copySel(cut){const a=selList();
   if(!a.length){$('st').textContent='音符が選択されていません(「選択モード」で範囲選択できます)';return}
