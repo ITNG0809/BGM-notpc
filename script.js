@@ -177,6 +177,13 @@ function drawRoll(){
   t.notes.forEach(n=>{if(!vis(n))return;const x=n.s*BW,y=(HI-1-n.p)*RH+1;
     g2.globalAlpha=.4+.6*n.v/127;g2.fillStyle=C.note;g2.fillRect(x,y,Math.max(4,n.d*BW-1),RH-2);g2.globalAlpha=1;
     if(n===selNote||selSet.has(n)){g2.strokeStyle=C.fg;g2.lineWidth=2;g2.strokeRect(x,y,Math.max(4,n.d*BW-1),RH-2);g2.lineWidth=1}});
+  // 選択中の音符群を薄い青の枠で囲み、右端に一括伸縮ハンドルを表示
+  if(selSet.size){const sb=selectionBounds();if(sb){
+    g2.fillStyle='rgba(76,141,255,.09)';g2.fillRect(sb.x,sb.y,sb.w,sb.h);
+    g2.strokeStyle='rgba(107,164,255,.95)';g2.lineWidth=1.5;g2.strokeRect(sb.x+.75,sb.y+.75,Math.max(0,sb.w-1.5),Math.max(0,sb.h-1.5));g2.lineWidth=1;
+    g2.fillStyle='#6ba4ff';g2.fillRect(sb.x+sb.w-3,sb.y,6,sb.h);
+    g2.fillStyle='#eaf3ff';g2.fillRect(sb.x+sb.w-1,sb.y+Math.max(0,sb.h/2-5),2,10);
+  }}
   {const rp=relPB();if(rp>=0){g2.strokeStyle='#e5484d';g2.lineWidth=2;g2.beginPath();g2.moveTo(rp*BW,0);g2.lineTo(rp*BW,H);g2.stroke();g2.lineWidth=1}}
   if(drag&&drag.mode==='box'){const xa=Math.min(drag.x0,drag.x1),ya=Math.min(drag.y0,drag.y1),bw=Math.abs(drag.x1-drag.x0),bh=Math.abs(drag.y1-drag.y0);g2.globalAlpha=.15;g2.fillStyle=C.note;g2.fillRect(xa,ya,bw,bh);g2.globalAlpha=1;g2.strokeStyle=C.note;g2.setLineDash([4,3]);g2.strokeRect(xa+.5,ya+.5,bw,bh);g2.setLineDash([])}
   g2.restore();
@@ -202,6 +209,7 @@ function autoExtend(e,x){if(x>S.len*BW-BW&&S.len<MAXBARS*4)S.len=Math.min(MAXBAR
 function hit(x,y){const t=S.tracks[sel];const p=HI-1-Math.floor(y/RH);
   for(let i=t.notes.length-1;i>=0;i--){const n=t.notes[i];if(n.p===p&&x>=n.s*BW&&x<=(n.s+n.d)*BW)return n}return null}
 const selList=()=>S.tracks[sel].notes.filter(n=>selSet.has(n));
+function selectionBounds(){const a=selList();if(!a.length)return null;let s=Infinity,e=-Infinity,p0=Infinity,p1=-Infinity;for(const n of a){s=Math.min(s,n.s);e=Math.max(e,n.s+n.d);p0=Math.min(p0,n.p);p1=Math.max(p1,n.p)}return{x:s*BW,y:(HI-1-p1)*RH,w:(e-s)*BW,h:(p1-p0+1)*RH,s,e,p0,p1,notes:a}}
 function seekTo(beat){const b=Math.max(0,Math.min(S.len,Math.round(beat/SNAP)*SNAP)),w=playing;if(w)pause();playBeat=b;if(w)play();else{draw();upPos()}}
 function boxSelect(){const d=drag,xa=Math.min(d.x0,d.x1),xb=Math.max(d.x0,d.x1),ya=Math.min(d.y0,d.y1),yb=Math.max(d.y0,d.y1);
   selSet.clear();d.base.forEach(n=>selSet.add(n));
@@ -209,9 +217,13 @@ function boxSelect(){const d=drag,xa=Math.min(d.x0,d.x1),xb=Math.max(d.x0,d.x1),
 cv.addEventListener('pointerdown',e=>{
   const rc=cv.getBoundingClientRect();
   if(VIEW!=='roll')return;
-  // PC操作: 左クリック=音符を削除、右クリック=空き場所に打ち込み。タッチ操作は従来どおり。
+  // PC操作: 左クリック=音符を削除、右クリック=空き場所に打ち込み。選択枠の右端は一括伸縮。
   if(e.pointerType==='mouse'&&e.clientY-rc.top>=RULER){
-    const {x,y}=pt(e), n=hit(x,y);
+    const {x,y}=pt(e), n=hit(x,y), sb=selectionBounds();
+    if(e.button===0&&sb&&selSet.size&&Math.abs(x-(sb.x+sb.w))<=8&&y>=sb.y-4&&y<=sb.y+sb.h+4){
+      e.preventDefault();e.stopPropagation();cv.setPointerCapture(e.pointerId);pushUndo();
+      drag={mode:'scaleSelection',x0:x,startBeat:sb.s,origW:sb.w/BW,notes:sb.notes.map(m=>({m,d:m.d})),cx:e.clientX,cy:e.clientY,moved:false};return;
+    }
     if(e.button===0){if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）'}return}
     if(e.button===2){e.preventDefault();if(!n){initAudio();tapAdd(x,y)}return}
   }
@@ -239,6 +251,13 @@ cv.addEventListener('pointermove',e=>{
   if(TP.has(e.pointerId))TP.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch){pinchMove();return}
   if(!drag)return;const{x,y}=pt(e);if(drag.mode==='tapadd'||drag.mode==='pan'){tapPan(e);return}
   if(drag.mode==='box'){edgeScroll(e);drag.x1=x;drag.y1=y;boxSelect();draw();return}
+  if(drag.mode==='scaleSelection'){
+    if(!drag.moved&&Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)<4)return;
+    const ratio=Math.max(GRID/Math.max(drag.origW,GRID),Math.min((S.len-drag.startBeat)/Math.max(drag.origW,GRID),(x/BW-drag.startBeat)/Math.max(drag.origW,GRID))); 
+    // 選択範囲の左端を基準に音符の長さだけを比例伸縮。各長さは現在の拍グリッドへ丸める。
+    for(const o of drag.notes){const maxD=Math.max(GRID,S.len-o.m.s);o.m.d=Math.max(GRID,Math.min(maxD,Math.round((o.d*ratio)/GRID)*GRID));}
+    drag.moved=true;draw();return;
+  }
   const n=drag.n;if(!drag.moved&&Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)<8)return;autoExtend(e,x);
   if(drag.mode==='resize'){n.d=Math.max(GRID,Math.min(S.len-n.s,Math.round((x/BW-n.s)/GRID)*GRID));lastDur=n.d}
   else{
@@ -256,6 +275,7 @@ const endDrag=e=>{if(e&&TP.has(e.pointerId))TP.delete(e.pointerId);if(pinch){if(
   if(!drag)return;const d=drag;drag=null;
   if(d.mode==='tapadd'){if(!d.moved&&e&&e.type==='pointerup'&&performance.now()-d.t0<700)tapAdd(d.x,d.y);return}
   if(d.mode==='pan')return;
+  if(d.mode==='scaleSelection'){if(d.moved)dirty();draw();return}
   if(d.mode==='box'){selNote=selSet.size===1?[...selSet][0]:null;draw();return}
   if(d.was&&!d.moved&&!d.mod&&TAPDEL&&MODE==='draw'&&e&&e.type==='pointerup'){tapErase(d.n);return} // 動かさずにもう一度タップ → 削除(pointerdownで取った Undo を1回分そのまま使う)
   dirty()};
@@ -267,6 +287,7 @@ function tapPan(e){const d=drag;if(!d.moved&&Math.hypot(e.clientX-d.cx,e.clientY
 function startPinch(){const[a,b]=[...TP.values()];drag=null;pinch={dx:Math.max(20,Math.abs(a.x-b.x)),dy:Math.max(20,Math.abs(a.y-b.y)),zh,zv}}
 function pinchMove(){const v=[...TP.values()];if(v.length<2)return;const dx=Math.abs(v[0].x-v[1].x),dy=Math.abs(v[0].y-v[1].y);if(dx>=20)zoomH(pinch.zh*dx/pinch.dx);if(dy>=20)zoomV(pinch.zv*dy/pinch.dy)}
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('contextmenu',e=>{if(VIEW==='roll')e.preventDefault()});
 function deleteNotes(arr){if(!arr.length)return;pushUndo();const t=S.tracks[sel],ds=new Set(arr);t.notes=t.notes.filter(n=>!ds.has(n));selSet.clear();selNote=null;draw();dirty()}
 cv.addEventListener('contextmenu',e=>{if(VIEW==='roll')e.preventDefault()});
 function delSel(){const a=selList();if(selNote&&!a.includes(selNote)&&S.tracks[sel].notes.includes(selNote))a.push(selNote);deleteNotes(a)}
