@@ -217,14 +217,25 @@ function boxSelect(){const d=drag,xa=Math.min(d.x0,d.x1),xb=Math.max(d.x0,d.x1),
 cv.addEventListener('pointerdown',e=>{
   const rc=cv.getBoundingClientRect();
   if(VIEW!=='roll')return;
-  // 右クリックは空き場所への打ち込み専用。既存音符は変更しない。
+  // 右クリック：空き場所なら音符を追加、既存音符ならドラッグ移動。
   if(e.pointerType==='mouse'&&e.button===2&&e.clientY-rc.top>=RULER){
-    const {x,y}=pt(e),n=hit(x,y);e.preventDefault();e.stopPropagation();if(!n){initAudio();tapAdd(x,y)}return;
+    const {x,y}=pt(e),n=hit(x,y);e.preventDefault();e.stopPropagation();
+    if(!n){initAudio();tapAdd(x,y);return}
+    syncBuf();initAudio();
+    if(!selSet.has(n)){selSet.clear();selSet.add(n)}
+    selNote=n;cv.setPointerCapture(e.pointerId);pushUndo();
+    drag={mode:'move',n,ox:x/BW-n.s,moved:false,n0s:n.s,n0p:n.p,was:true,mod:false,cx:e.clientX,cy:e.clientY,snap:[...selSet].map(m=>({m,s:m.s,p:m.p}))};
+    draw();return;
   }
   if(e.pointerType==='mouse'&&e.button===0&&e.clientY-rc.top>=RULER){const {x,y}=pt(e),n=hit(x,y);if(n){e.preventDefault();deleteNotes(selSet.has(n)?selList():[n]);$('st').textContent='音符を削除しました（↶で元に戻せます）';return}}
   syncBuf();if(e.clientY-rc.top<RULER){if(EP){$('st').textContent='再生位置はソング画面のルーラーで移動できます';return}seekTo((e.clientX-rc.left+roll.scrollLeft)/BW);return}
   initAudio();const{x,y}=pt(e),t=S.tracks[sel];let n=hit(x,y);
   const mod=e.shiftKey||e.ctrlKey||e.metaKey;const was=!!n;
+  // タッチ限定：トラック上の音符が1個だけなら、その音符をもう一度タップして削除できる。
+  // マウス操作と、複数音符の編集には影響させない。
+  if(e.pointerType==='touch'&&MODE==='draw'&&!mod&&n&&S.tracks[sel].notes.length===1){
+    cv.setPointerCapture(e.pointerId);drag={mode:'tapdelete',n,cx:e.clientX,cy:e.clientY,moved:false};return;
+  }
   // 選択枠はどこをつかんでも移動可能。右端はマウス・タッチ共通の伸縮ハンドル。
   const sb=selectionBounds();
   if(e.button===0&&sb&&selSet.size&&y>=sb.y-5&&y<=sb.y+sb.h+5&&x>=sb.x-5&&x<=sb.x+sb.w+5){
@@ -293,6 +304,7 @@ cv.addEventListener('pointermove',e=>{
 const endDrag=e=>{if(e&&TP.has(e.pointerId))TP.delete(e.pointerId);if(pinch){if(TP.size<2)pinch=null;return}
   if(!drag)return;const d=drag;drag=null;
   if(d.mode==='tapadd'){if(!d.moved&&e&&e.type==='pointerup'&&performance.now()-d.t0<700)tapAdd(d.x,d.y);return}
+  if(d.mode==='tapdelete'){if(!d.moved&&e&&e.type==='pointerup'){tapErase(d.n)}return}
   if(d.mode==='pan')return;
   if(d.mode==='scaleSelection'||d.mode==='moveSelection'){if(d.moved)dirty();draw();return}
   if(d.mode==='box'){selNote=selSet.size===1?[...selSet][0]:null;draw();return}
