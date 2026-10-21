@@ -147,3 +147,8 @@ aside{min-width:0;overflow-x:hidden}
 .trk select,.trk input:not([type="color"]):not([type="range"]){width:100%;min-width:0}
 .trk .dd{width:100%;min-width:0;max-width:100%}
 
+
+/* ブロック内オートメーション: 既存の配色変数を使用し、ライト/ダーク自動追従 */
+#patAuto.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+#patAutoKind{max-width:110px}
+#sgAT,#sgDelAT,#sgbar>#akind{display:none!important}
