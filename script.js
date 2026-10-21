@@ -262,12 +262,20 @@ cv.addEventListener('pointermove',e=>{
     const minSpan=GRID;
     const target=Math.max(minSpan,Math.min(S.len-drag.groupStart,Math.round((x/BW-drag.groupStart)/GRID)*GRID));
     const ratio=target/oldSpan;
+    const movePositions=$('rangeResizeMove')?.checked===true;
     for(const o of drag.snap){
-      const rel=o.s-drag.groupStart;
-      const scaledRel=Math.round(rel*ratio/GRID)*GRID;
-      const safeRel=Math.max(0,Math.min(Math.max(0,target-GRID),scaledRel));
-      o.m.s=drag.groupStart+safeRel;
-      o.m.d=Math.max(GRID,Math.min(target-safeRel,Math.round(o.d*ratio/GRID)*GRID));
+      if(movePositions){
+        // ON: 音符の開始位置もグループの左端を基準に比例移動する（従来の動作）
+        const rel=o.s-drag.groupStart;
+        const scaledRel=Math.round(rel*ratio/GRID)*GRID;
+        const safeRel=Math.max(0,Math.min(Math.max(0,target-GRID),scaledRel));
+        o.m.s=drag.groupStart+safeRel;
+        o.m.d=Math.max(GRID,Math.min(target-safeRel,Math.round(o.d*ratio/GRID)*GRID));
+      }else{
+        // OFF（初期設定）: 開始位置は固定し、各音符の長さだけを比例変更する
+        o.m.s=o.s;
+        o.m.d=Math.max(GRID,Math.min(S.len-o.s,Math.round(o.d*ratio/GRID)*GRID));
+      }
       if(o.m.s+o.m.d>S.len)o.m.d=Math.max(GRID,Math.floor((S.len-o.m.s)/GRID)*GRID);
     }
   }
