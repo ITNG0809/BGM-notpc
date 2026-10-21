@@ -219,20 +219,29 @@ cv.addEventListener('pointerdown',e=>{
     if(TP.size>=2){if(!drag||drag.mode==='tapadd'||drag.mode==='pan')startPinch();return}
     if(!n&&MODE==='draw'&&!mod){cv.setPointerCapture(e.pointerId);drag={mode:'tapadd',x,y,cx:e.clientX,cy:e.clientY,t0:performance.now(),sl:roll.scrollLeft,st:roll.scrollTop,moved:false};return}}
   cv.setPointerCapture(e.pointerId);
-  if(!n&&(MODE==='select'||mod)){drag={mode:'box',x0:x,y0:y,x1:x,y1:y,base:new Set(mod?selSet:[])};selNote=null;boxSelect();draw();return}
-  if(n&&mod){if(selSet.has(n)){selSet.delete(n);selNote=null;draw();return}selSet.add(n)}
-  else if(n&&!selSet.has(n)){selSet.clear();selSet.add(n)}
+  // 選択枠の内側なら、音符そのものがない場所でも選択グループを移動できる。
+  // 範囲選択モードの空白クリック判定より先に行い、内側ドラッグが箱選択に奪われないようにする。
+  let picked=S.tracks[sel].notes.filter(m=>selSet.has(m));
+  const bounds=()=>({left:Math.min(...picked.map(m=>m.s))*BW,right:Math.max(...picked.map(m=>m.s+m.d))*BW,
+    top:Math.min(...picked.map(m=>(HI-1-m.p)*RH)),bottom:Math.max(...picked.map(m=>(HI-m.p)*RH))});
+  let insideSelection=false,selectionBounds=null;
+  if(!n&&!mod&&picked.length){selectionBounds=bounds();insideSelection=x>=selectionBounds.left-2&&x<=selectionBounds.right+3&&y>=selectionBounds.top-2&&y<=selectionBounds.bottom+2;}
+  if(!n&&!insideSelection&&(MODE==='select'||mod)){drag={mode:'box',x0:x,y0:y,x1:x,y1:y,base:new Set(mod?selSet:[])};selNote=null;boxSelect();draw();return}
+  if(n&&mod){if(selSet.has(n)){selSet.delete(n);selNote=null;draw();return}selSet.add(n);picked=S.tracks[sel].notes.filter(m=>selSet.has(m))}
+  else if(n&&!selSet.has(n)){selSet.clear();selSet.add(n);picked=[n]}
   pushUndo();let mode='move';
-  if(!n&&x>=S.len*BW)S.len=Math.min(MAXBARS*4,Math.ceil(x/BW/4)*4);
+  if(!n&&x>=S.len*BW&&!insideSelection)S.len=Math.min(MAXBARS*4,Math.ceil(x/BW/4)*4);
+  if(insideSelection){n=picked[0];selectionBounds=bounds();}
   if(n){
-    const picked=S.tracks[sel].notes.filter(m=>selSet.has(m));
+    picked=S.tracks[sel].notes.filter(m=>selSet.has(m));
     const left=Math.min(...picked.map(m=>m.s)),right=Math.max(...picked.map(m=>m.s+m.d));
     const rightPx=right*BW-x;
-    mode=(picked.length>1&&rightPx>=-2&&rightPx<10)?'groupResize':((rightPx>=0&&rightPx<10&&selSet.size===1)?'resize':'move');
+    const withinY=y>=Math.min(...picked.map(m=>(HI-1-m.p)*RH))-5&&y<=Math.max(...picked.map(m=>(HI-m.p)*RH))+5;
+    mode=(picked.length>1&&rightPx>=-2&&rightPx<10&&withinY)?'groupResize':((rightPx>=0&&rightPx<10&&selSet.size===1)?'resize':'move');
   }
   else{const p=HI-1-Math.floor(y/RH);if(p<LO||p>=HI){undo.pop();return}
     const s=Math.max(0,Math.min(S.len-lastDur,Math.floor(x/BW/GRID+1e-9)*GRID));
-    n={p,s,d:lastDur,v:100};t.notes.push(n);selSet.clear();selSet.add(n)}
+    n={p,s,d:lastDur,v:100};t.notes.push(n);selSet.clear();selSet.add(n);picked=[n]}
   selNote=n;voice(t,n.p,n.v,ctx.currentTime,.25);
   const snap=[...selSet].map(m=>({m,s:m.s,p:m.p,d:m.d}));
   drag={mode,n,ox:x/BW-n.s,moved:false,n0s:n.s,n0p:n.p,was,mod,cx:e.clientX,cy:e.clientY,snap,
@@ -247,8 +256,10 @@ cv.addEventListener('pointermove',e=>{
   if(drag.mode==='resize'){n.d=Math.max(GRID,Math.min(S.len-n.s,Math.round((x/BW-n.s)/GRID)*GRID));lastDur=n.d}
   else if(drag.mode==='groupResize'){
     const oldSpan=Math.max(GRID,drag.groupEnd-drag.groupStart);
-    const target=Math.max(oldSpan,Math.round((x/BW-drag.groupStart)/GRID)*GRID);
-    const ratio=Math.min((S.len-drag.groupStart)/oldSpan,target/oldSpan);
+    // 右端を左へ動かせば縮小、右へ動かせば拡大。
+    const minSpan=Math.max(GRID,...drag.snap.map(o=>(o.s-drag.groupStart)+GRID));
+    const target=Math.max(minSpan,Math.min(S.len-drag.groupStart,Math.round((x/BW-drag.groupStart)/GRID)*GRID));
+    const ratio=target/oldSpan;
     for(const o of drag.snap){
       const rel=o.s-drag.groupStart;
       o.m.s=drag.groupStart+Math.round(rel*ratio/GRID)*GRID;
