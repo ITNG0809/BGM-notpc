@@ -257,13 +257,17 @@ cv.addEventListener('pointermove',e=>{
   else if(drag.mode==='groupResize'){
     const oldSpan=Math.max(GRID,drag.groupEnd-drag.groupStart);
     // 右端を左へ動かせば縮小、右へ動かせば拡大。
-    const minSpan=Math.max(GRID,...drag.snap.map(o=>(o.s-drag.groupStart)+GRID));
+    // 選択グループは最小1グリッドまで縮小可能。縮小時に音符の開始位置が
+    // グループ幅をはみ出さないよう、開始位置と長さをそれぞれ目標幅内に制限する。
+    const minSpan=GRID;
     const target=Math.max(minSpan,Math.min(S.len-drag.groupStart,Math.round((x/BW-drag.groupStart)/GRID)*GRID));
     const ratio=target/oldSpan;
     for(const o of drag.snap){
       const rel=o.s-drag.groupStart;
-      o.m.s=drag.groupStart+Math.round(rel*ratio/GRID)*GRID;
-      o.m.d=Math.max(GRID,Math.round(o.d*ratio/GRID)*GRID);
+      const scaledRel=Math.round(rel*ratio/GRID)*GRID;
+      const safeRel=Math.max(0,Math.min(Math.max(0,target-GRID),scaledRel));
+      o.m.s=drag.groupStart+safeRel;
+      o.m.d=Math.max(GRID,Math.min(target-safeRel,Math.round(o.d*ratio/GRID)*GRID));
       if(o.m.s+o.m.d>S.len)o.m.d=Math.max(GRID,Math.floor((S.len-o.m.s)/GRID)*GRID);
     }
   }
