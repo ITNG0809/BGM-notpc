@@ -178,6 +178,8 @@ function drawRoll(){
   t.notes.forEach(n=>{if(!vis(n))return;const x=n.s*BW,y=(HI-1-n.p)*RH+1;
     g2.globalAlpha=.4+.6*n.v/127;g2.fillStyle=C.note;g2.fillRect(x,y,Math.max(4,n.d*BW-1),RH-2);g2.globalAlpha=1;
     if(n===selNote||selSet.has(n)){g2.strokeStyle=C.fg;g2.lineWidth=2;g2.strokeRect(x,y,Math.max(4,n.d*BW-1),RH-2);g2.lineWidth=1}});
+  // 選択範囲: 薄い青の外周と右端の一括伸縮ハンドル
+  {const picked=S.tracks[sel].notes.filter(n=>selSet.has(n));if(picked.length){const bx0=Math.min(...picked.map(n=>n.s))*BW,bx1=Math.max(...picked.map(n=>n.s+n.d))*BW,by0=Math.min(...picked.map(n=>(HI-1-n.p)*RH)),by1=Math.max(...picked.map(n=>(HI-n.p)*RH));g2.strokeStyle='#72baff';g2.lineWidth=1.25;g2.setLineDash([]);g2.strokeRect(bx0-2,by0-2,bx1-bx0+4,by1-by0+4);g2.fillStyle='#72baff';g2.fillRect(bx1-2,(by0+by1)/2-5,5,10)}}
   {const rp=relPB();if(rp>=0){g2.strokeStyle='#e5484d';g2.lineWidth=2;g2.beginPath();g2.moveTo(rp*BW,0);g2.lineTo(rp*BW,H);g2.stroke();g2.lineWidth=1}}
   if(drag&&drag.mode==='box'){const xa=Math.min(drag.x0,drag.x1),ya=Math.min(drag.y0,drag.y1),bw=Math.abs(drag.x1-drag.x0),bh=Math.abs(drag.y1-drag.y0);g2.globalAlpha=.15;g2.fillStyle=C.note;g2.fillRect(xa,ya,bw,bh);g2.globalAlpha=1;g2.strokeStyle=C.note;g2.setLineDash([4,3]);g2.strokeRect(xa+.5,ya+.5,bw,bh);g2.setLineDash([])}
   g2.restore();
@@ -222,12 +224,20 @@ cv.addEventListener('pointerdown',e=>{
   else if(n&&!selSet.has(n)){selSet.clear();selSet.add(n)}
   pushUndo();let mode='move';
   if(!n&&x>=S.len*BW)S.len=Math.min(MAXBARS*4,Math.ceil(x/BW/4)*4);
-  if(n){const right=(n.s+n.d)*BW-x;mode=(right<10&&selSet.size===1)?'resize':'move'}
+  if(n){
+    const picked=S.tracks[sel].notes.filter(m=>selSet.has(m));
+    const left=Math.min(...picked.map(m=>m.s)),right=Math.max(...picked.map(m=>m.s+m.d));
+    const rightPx=right*BW-x;
+    mode=(picked.length>1&&rightPx>=-2&&rightPx<10)?'groupResize':((rightPx>=0&&rightPx<10&&selSet.size===1)?'resize':'move');
+  }
   else{const p=HI-1-Math.floor(y/RH);if(p<LO||p>=HI){undo.pop();return}
     const s=Math.max(0,Math.min(S.len-lastDur,Math.floor(x/BW/GRID+1e-9)*GRID));
     n={p,s,d:lastDur,v:100};t.notes.push(n);selSet.clear();selSet.add(n)}
   selNote=n;voice(t,n.p,n.v,ctx.currentTime,.25);
-  drag={mode,n,ox:x/BW-n.s,moved:false,n0s:n.s,n0p:n.p,was,mod,cx:e.clientX,cy:e.clientY,snap:[...selSet].map(m=>({m,s:m.s,p:m.p}))};draw();
+  const snap=[...selSet].map(m=>({m,s:m.s,p:m.p,d:m.d}));
+  drag={mode,n,ox:x/BW-n.s,moved:false,n0s:n.s,n0p:n.p,was,mod,cx:e.clientX,cy:e.clientY,snap,
+    groupStart:snap.length?Math.min(...snap.map(o=>o.s)):n.s,
+    groupEnd:snap.length?Math.max(...snap.map(o=>o.s+o.d)):n.s+n.d};draw();
 });
 cv.addEventListener('pointermove',e=>{
   if(TP.has(e.pointerId))TP.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch){pinchMove();return}
@@ -235,6 +245,17 @@ cv.addEventListener('pointermove',e=>{
   if(drag.mode==='box'){edgeScroll(e);drag.x1=x;drag.y1=y;boxSelect();draw();return}
   const n=drag.n;if(!drag.moved&&Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)<8)return;autoExtend(e,x);
   if(drag.mode==='resize'){n.d=Math.max(GRID,Math.min(S.len-n.s,Math.round((x/BW-n.s)/GRID)*GRID));lastDur=n.d}
+  else if(drag.mode==='groupResize'){
+    const oldSpan=Math.max(GRID,drag.groupEnd-drag.groupStart);
+    const target=Math.max(oldSpan,Math.round((x/BW-drag.groupStart)/GRID)*GRID);
+    const ratio=Math.min((S.len-drag.groupStart)/oldSpan,target/oldSpan);
+    for(const o of drag.snap){
+      const rel=o.s-drag.groupStart;
+      o.m.s=drag.groupStart+Math.round(rel*ratio/GRID)*GRID;
+      o.m.d=Math.max(GRID,Math.round(o.d*ratio/GRID)*GRID);
+      if(o.m.s+o.m.d>S.len)o.m.d=Math.max(GRID,Math.floor((S.len-o.m.s)/GRID)*GRID);
+    }
+  }
   else{
     let ds=Math.round((x/BW-drag.ox)/GRID)*GRID-drag.n0s;
     let mnS=1e9,mxE=-1e9,mnP=1e9,mxP=-1e9;
