@@ -928,7 +928,9 @@ function paEnsure(p=EP){
   if(Array.isArray(a.points)&&!a.curves[a.kind])a.curves[a.kind]=a.points;
   for(const k of Object.keys(PADEF)){
     if(!Array.isArray(a.curves[k]))a.curves[k]=[];
-    a.curves[k]=a.curves[k].filter(q=>q&&Number.isFinite(+q.t)&&Number.isFinite(+q.v));for(const q of a.curves[k]){q.id=q.id||uid();q.t=Math.max(0,Math.min(p.len,+q.t));q.v=Math.max(PADEF[k].min,Math.min(PADEF[k].max,+q.v));q.shape=['line','step','smooth'].includes(q.shape)?q.shape:'line'}a.curves[k].sort((x,y)=>x.t-y.t);
+    // 配列そのものは作り直さず、その場で整える(呼び出し側が保持している配列へ点を追加しても消えないように)
+    const arr=a.curves[k];for(let i=arr.length-1;i>=0;i--){const q=arr[i];if(!(q&&Number.isFinite(+q.t)&&Number.isFinite(+q.v)))arr.splice(i,1)}
+    for(const q of arr){q.id=q.id||uid();q.t=Math.max(0,Math.min(p.len,+q.t));q.v=Math.max(PADEF[k].min,Math.min(PADEF[k].max,+q.v));q.shape=['line','step','smooth'].includes(q.shape)?q.shape:'line'}arr.sort((x,y)=>x.t-y.t);
   }
   delete a.points;return a;
 }
@@ -944,11 +946,51 @@ function drawPatternAutomationOverlay(){if(!PAEdit||VIEW!=='roll'||!EP)return;co
   if(PARange){const x0=Math.min(PARange.x0,PARange.x1)*BW-roll.scrollLeft,x1=Math.max(PARange.x0,PARange.x1)*BW-roll.scrollLeft,y0=paXY({t:0,v:Math.max(PARange.y0,PARange.y1)}).y,y1=paXY({t:0,v:Math.min(PARange.y0,PARange.y1)}).y;g2.globalAlpha=.15;g2.fillStyle=css('--acc');g2.fillRect(x0,y0,x1-x0,y1-y0);g2.globalAlpha=1;g2.strokeStyle=css('--acc');g2.setLineDash([4,3]);g2.strokeRect(x0,y0,x1-x0,y1-y0);g2.setLineDash([])}
   g2.fillStyle=css('--acc');g2.font='bold 12px system-ui';g2.fillText('オートメーション: '+PADEF[PAKind].label+'　空白タップ=追加 / 点ドラッグ=移動 / 右クリック=削除',8,RULER+15);g2.restore()}
 function paCommit(){if(!EP)return;const pts=paEnsure().curves[PAKind];pts.sort((a,b)=>a.t-b.t);for(let i=pts.length-1;i>0;i--)if(Math.abs(pts[i].t-pts[i-1].t)<.001){if(PASelected===pts[i-1].id)pts.splice(i,1);else pts.splice(i-1,1)}draw();dirty();paUpdateFields()}
-cv.addEventListener('pointerdown',e=>{if(!PAEdit||VIEW!=='roll'||!EP)return;if(e.clientY<roll.getBoundingClientRect().top+RULER)return;e.preventDefault();e.stopImmediatePropagation();try{cv.setPointerCapture(e.pointerId)}catch(_){}const pts=paEnsure().curves[PAKind],hit=paFindPoint(e),q=paPoint(e);pushUndo();if(e.shiftKey){PARange={x0:q.t,y0:q.v,x1:q.t,y1:q.v};PAEditDrag={type:'range',pointer:e.pointerId};draw();return}if(hit){if(!PASelectedSet.has(hit.id))PASelectedSet=new Set([hit.id]);PASelected=hit.id;PAEditDrag={type:'move',pointer:e.pointerId,start:q,selected:pts.filter(p=>PASelectedSet.has(p.id)).map(p=>({id:p.id,t:p.t,v:p.v}))}}else{const point={id:uid(),...q,shape:'line'};pts.push(point);pts.sort((a,b)=>a.t-b.t);PASelected=point.id;PASelectedSet=new Set([point.id]);PAEditDrag={type:'move',pointer:e.pointerId,start:q,selected:[{id:point.id,t:point.t,v:point.v}]};}paUpdateFields();draw();dirty()},true);
-cv.addEventListener('pointermove',e=>{if(!PAEdit||!PAEditDrag||PAEditDrag.pointer!==e.pointerId)return;e.preventDefault();e.stopImmediatePropagation();const q=paPoint(e);if(PAEditDrag.type==='range'&&PARange){PARange.x1=q.t;PARange.y1=q.v;draw();return}const dx=q.t-PAEditDrag.start.t,dy=q.v-PAEditDrag.start.v,pts=paEnsure().curves[PAKind];for(const old of PAEditDrag.selected){const p=pts.find(x=>x.id===old.id);if(p){p.t=Math.max(0,Math.min(EP.len,old.t+dx));p.v=Math.max(PADEF[PAKind].min,Math.min(PADEF[PAKind].max,old.v+dy))}}pts.sort((a,b)=>a.t-b.t);draw();paUpdateFields();dirty()},true);
-function paEnd(e){if(!PAEditDrag||e&&PAEditDrag.pointer!==e.pointerId)return;if(PARange){const r=PARange,pts=paEnsure().curves[PAKind];PASelectedSet=new Set(pts.filter(q=>q.t>=Math.min(r.x0,r.x1)&&q.t<=Math.max(r.x0,r.x1)&&q.v>=Math.min(r.y0,r.y1)&&q.v<=Math.max(r.y0,r.y1)).map(q=>q.id));PASelected=PASelectedSet.values().next().value||null;PARange=null}PAEditDrag=null;paCommit()}
-cv.addEventListener('pointerup',paEnd,true);cv.addEventListener('pointercancel',paEnd,true);
-cv.addEventListener('contextmenu',e=>{if(!PAEdit||VIEW!=='roll'||!EP)return;e.preventDefault();e.stopImmediatePropagation();const q=paFindPoint(e);if(q){pushUndo();paEnsure().curves[PAKind]=paEnsure().curves[PAKind].filter(p=>p.id!==q.id);PASelectedSet.delete(q.id);if(PASelected===q.id)PASelected=null;paCommit()}},true);
+// オートメーション入力はcanvas/rollの個別イベントに依存せず、document captureで先に受け取る。
+// sticky canvas・タッチ・スクロール時に通常の音符イベントへ奪われないようにする。
+function paEventInside(e){
+  const r=roll.getBoundingClientRect();
+  return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top+RULER&&e.clientY<=r.bottom;
+}
+document.addEventListener('pointerdown',e=>{
+  if(!PAEdit||VIEW!=='roll'||!EP||!paEventInside(e))return;
+  e.preventDefault();e.stopImmediatePropagation();
+  try{roll.setPointerCapture(e.pointerId)}catch(_){}
+  const pts=paEnsure().curves[PAKind],hit=paFindPoint(e),q=paPoint(e);
+  pushUndo();
+  if(e.shiftKey){PARange={x0:q.t,y0:q.v,x1:q.t,y1:q.v};PAEditDrag={type:'range',pointer:e.pointerId};draw();return}
+  if(hit){
+    if(!PASelectedSet.has(hit.id))PASelectedSet=new Set([hit.id]);
+    PASelected=hit.id;
+    PAEditDrag={type:'move',pointer:e.pointerId,start:q,selected:pts.filter(p=>PASelectedSet.has(p.id)).map(p=>({id:p.id,t:p.t,v:p.v}))};
+  }else{
+    const point={id:uid(),...q,shape:'line'};pts.push(point);pts.sort((a,b)=>a.t-b.t);
+    PASelected=point.id;PASelectedSet=new Set([point.id]);
+    PAEditDrag={type:'move',pointer:e.pointerId,start:q,selected:[{id:point.id,t:point.t,v:point.v}]};
+  }
+  paUpdateFields();draw();dirty();
+},true);
+document.addEventListener('pointermove',e=>{
+  if(!PAEdit||!PAEditDrag||PAEditDrag.pointer!==e.pointerId)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  const q=paPoint(e);
+  if(PAEditDrag.type==='range'&&PARange){PARange.x1=q.t;PARange.y1=q.v;draw();return}
+  const dx=q.t-PAEditDrag.start.t,dy=q.v-PAEditDrag.start.v,pts=paEnsure().curves[PAKind];
+  for(const old of PAEditDrag.selected){const point=pts.find(x=>x.id===old.id);if(point){point.t=Math.max(0,Math.min(EP.len,old.t+dx));point.v=Math.max(PADEF[PAKind].min,Math.min(PADEF[PAKind].max,old.v+dy))}}
+  pts.sort((a,b)=>a.t-b.t);draw();paUpdateFields();dirty();
+},true);
+function paEnd(e){
+  if(!PAEditDrag||e&&PAEditDrag.pointer!==e.pointerId)return;
+  if(PARange){const r=PARange,pts=paEnsure().curves[PAKind];PASelectedSet=new Set(pts.filter(q=>q.t>=Math.min(r.x0,r.x1)&&q.t<=Math.max(r.x0,r.x1)&&q.v>=Math.min(r.y0,r.y1)&&q.v<=Math.max(r.y0,r.y1)).map(q=>q.id));PASelected=PASelectedSet.values().next().value||null;PARange=null}
+  PAEditDrag=null;paCommit();
+}
+document.addEventListener('pointerup',e=>{if(PAEditDrag&&PAEditDrag.pointer===e.pointerId){e.stopImmediatePropagation();paEnd(e)}},true);
+document.addEventListener('pointercancel',e=>{if(PAEditDrag&&PAEditDrag.pointer===e.pointerId){e.stopImmediatePropagation();paEnd(e)}},true);
+document.addEventListener('contextmenu',e=>{
+  if(!PAEdit||VIEW!=='roll'||!EP||!paEventInside(e))return;
+  e.preventDefault();e.stopImmediatePropagation();const point=paFindPoint(e);
+  if(point){pushUndo();paEnsure().curves[PAKind]=paEnsure().curves[PAKind].filter(p=>p.id!==point.id);PASelectedSet.delete(point.id);if(PASelected===point.id)PASelected=null;paCommit()}
+},true);
 function togglePatternAutomation(){if(!EP){$('st').textContent='先にパターンを開いてください';return}PAEdit=!PAEdit;PAEditDrag=null;PARange=null;PASelected=null;PASelectedSet.clear();for(const id of ['paSnapWrap','paGrid','paShape','paTimeWrap','paValueWrap','paDelete','paCopy','paPaste']){const el=$(id);if(el)el.style.display=PAEdit?'':'none'}if(PAEdit){paEnsure();PAKind=EP.automation?.kind||'vol';$('patAuto').classList.add('on');$('patAutoKind').style.display='';$('patAutoKind').value=PAKind;$('st').textContent='オートメーション編集: 空白タップで点追加、点ドラッグで移動'}else{$('patAuto').classList.remove('on');$('patAutoKind').style.display='none';$('st').textContent='オートメーション編集を終了しました'}paUpdateFields();draw()}
 $('patAuto').onclick=togglePatternAutomation;$('patAutoKind').onchange=e=>{PAKind=PADEF[e.target.value]?e.target.value:'vol';if(EP){paEnsure();EP.automation.kind=PAKind;PASelected=null;PASelectedSet.clear();draw();paUpdateFields();dirty()}};
 if($('paShape'))$('paShape').onchange=e=>{const q=paEnsure()?.curves[PAKind].find(p=>p.id===PASelected);if(!q)return;pushUndo();q.shape=e.target.value;paCommit()};
