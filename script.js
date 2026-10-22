@@ -19,24 +19,13 @@ function initAudio(){
 }
 function voice(t,p,v,when,dur){PC=(VB==null)?null:pitchCurve(t,VB,dur/spb());if(PA&&PA.p){const av=patAutoVal(PA.p,PA.b,'vol');v=Math.max(0,Math.min(127,v*av));const ev=patAutoVal(PA.p,PA.b,'echo');try{const ch=getCh(t);ch.eg.gain.setValueAtTime(Math.max(0,Math.min(1,ev)),when)}catch(_){}}if(t.sf&&sfRes(t))sfVoice(t,p,v,when,dur);else synthVoice(t,p,v,when,dur);PC=null;PA=null}
 function synthVoice(t,p,v,when,dur){
-  const o=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain();
+  const o=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain(),pan=ctx.createStereoPanner();
   o.type=t.wave;o.frequency.value=440*Math.pow(2,(p-69)/12);if(PC)applyDet(o.detune,when,PC);
-  f.type='lowpass';f.frequency.value=t.cut;
+  f.type='lowpass';{const fp=PA&&PA.p&&paEnsure(PA.p).curves.filter;f.frequency.value=fp&&fp.length?patAutoVal(PA.p,PA.b,'filter'):t.cut}pan.pan.setValueAtTime(PA&&PA.p?patAutoVal(PA.p,PA.b,'pan'):(t.pan||0),when);
   const pk=t.vol*(v/127)*.35,A=.01,R=.12,end=when+Math.max(dur,.05);
   g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(pk,when+A);
   g.gain.setValueAtTime(pk*.8,Math.max(end,when+A));g.gain.linearRampToValueAtTime(0,end+R);
-  const autoPan=PA&&PA.p?Math.max(-1,Math.min(1,patAutoVal(PA.p,PA.b,'pan'))):0;
-  const autoCut=PA&&PA.p?Math.max(80,Math.min(18000,Math.pow(18000/80,patAutoVal(PA.p,PA.b,'filter')))):t.cut;
-  f.frequency.setValueAtTime(autoCut,when);
-  const pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
-  if(pan)pan.pan.setValueAtTime(autoPan,when);
-  o.connect(f);f.connect(g);
-  const dest=chIn(t);
-  if(pan){g.connect(pan);pan.connect(dest)}else g.connect(dest);
-  /* Lightweight per-note reverb send; bounded delay keeps offline/mobile browsers compatible. */
-  const rv=PA&&PA.p?Math.max(0,Math.min(1,patAutoVal(PA.p,PA.b,'reverb'))):0;
-  if(rv>0){const dly=ctx.createDelay(1.5),wet=ctx.createGain();dly.delayTime.value=.11;wet.gain.value=rv*.28;g.connect(dly);dly.connect(wet);wet.connect(dest)}
-  o.start(when);o.stop(end+R+.02);
+  o.connect(f);f.connect(g);g.connect(pan);pan.connect(chIn(t));o.start(when);o.stop(end+R+.02);
 }
 const anySolo=()=>S.tracks.some(t=>t.solo)||AT().some(t=>t.solo);
 const audible=t=>!t.mute&&(!anySolo()||t.solo);
@@ -187,7 +176,7 @@ function drawRoll(){
   g2.globalAlpha=1;
   const t=S.tracks[sel];
   t.notes.forEach(n=>{if(!vis(n))return;const x=n.s*BW,y=(HI-1-n.p)*RH+1;
-    g2.globalAlpha=.4+.6*n.v/127;g2.fillStyle=C.note;g2.fillRect(x,y,Math.max(4,n.d*BW-1),RH-2);g2.globalAlpha=1;
+    g2.globalAlpha=PAEdit?(.10+.12*n.v/127):(.4+.6*n.v/127);g2.fillStyle=C.note;g2.fillRect(x,y,Math.max(4,n.d*BW-1),RH-2);g2.globalAlpha=1;
     if(n===selNote||selSet.has(n)){g2.strokeStyle=C.fg;g2.lineWidth=2;g2.strokeRect(x,y,Math.max(4,n.d*BW-1),RH-2);g2.lineWidth=1}});
   // 選択範囲: 薄い青の外周と右端の一括伸縮ハンドル
   {const picked=S.tracks[sel].notes.filter(n=>selSet.has(n));if(picked.length){const bx0=Math.min(...picked.map(n=>n.s))*BW,bx1=Math.max(...picked.map(n=>n.s+n.d))*BW,by0=Math.min(...picked.map(n=>(HI-1-n.p)*RH)),by1=Math.max(...picked.map(n=>(HI-n.p)*RH));g2.strokeStyle='#72baff';g2.lineWidth=1.25;g2.setLineDash([]);g2.strokeRect(bx0-2,by0-2,bx1-bx0+4,by1-by0+4);g2.fillStyle='#72baff';g2.fillRect(bx1-2,(by0+by1)/2-5,5,10)}}
@@ -799,7 +788,7 @@ function drawVL(){const r=devicePixelRatio||1,w=Math.max(1,roll.clientWidth),h=V
 const vOf=y=>Math.max(1,Math.min(127,Math.round((1-(y-14)/(VLH-18))*127)));
 const vXY=e=>{const r=vl.getBoundingClientRect();return{x:e.clientX-r.left+roll.scrollLeft,y:e.clientY-r.top}};
 function vApply(e){const nv=vOf(vXY(e).y),d=nv-vdrag.v0;for(const g of vdrag.group)g.n.v=Math.max(1,Math.min(127,g.v+d));draw()}
-vl.addEventListener('pointerdown',e=>{if(PAEdit&&VIEW==='roll'){e.preventDefault();e.stopImmediatePropagation();return}const{x,y}=vXY(e),tv=vOf(y);let best=null,bs=1e9;
+vl.addEventListener('pointerdown',e=>{const{x,y}=vXY(e),tv=vOf(y);let best=null,bs=1e9;
   for(const n of S.tracks[sel].notes){const dx=Math.abs(x-(n.s*BW+3));if(dx>10)continue;const sc=Math.abs(n.v-tv)+dx*.5;if(sc<bs){bs=sc;best=n}}
   if(!best)return;initAudio();vl.setPointerCapture(e.pointerId);pushUndo();
   if(!selSet.has(best)){selSet.clear();selSet.add(best)}selNote=best;
@@ -929,74 +918,51 @@ $('del').onclick=delSel;$('dup').onclick=dupSel;
 $('addA').onclick=()=>$('audf').click();
 $('audf').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f){initAudio();await addAudio(f)}};
 
-/* ---------- ピアノロール内ブロック・オートメーション ---------- */
-const PA_KINDS=['vol','pitch','echo','pan','filter','reverb'];
-const PA_LABELS={vol:'音量',pitch:'ピッチ',echo:'エコー',pan:'パン',filter:'フィルター',reverb:'リバーブ'};
-function paEnsure(p){
-  if(!p.automation||typeof p.automation!=='object')p.automation={kind:'vol',curves:{}};
-  const a=p.automation;
-  if(!a.curves||typeof a.curves!=='object')a.curves={};
+/* ---------- ブロック内オートメーション: 統合ポイントエディター ---------- */
+const PADEF={vol:{min:-1,max:1,def:0,label:'音量'},pitch:{min:-1,max:1,def:0,label:'ピッチ'},echo:{min:0,max:1,def:0,label:'エコー'},pan:{min:-1,max:1,def:0,label:'パン'},filter:{min:0,max:1,def:1,label:'フィルター'},reverb:{min:0,max:1,def:0,label:'リバーブ'}};
+let PASelected=-1,PAStart=null,PAChanged=false;
+function paEnsure(p=EP){if(!p)return null;let a=p.automation;if(!a||typeof a!=='object')a=p.automation={kind:'vol',curves:{}};
+  a.kind=PADEF[a.kind]?a.kind:'vol';if(!a.curves||typeof a.curves!=='object')a.curves={};
   if(Array.isArray(a.points)&&!a.curves[a.kind])a.curves[a.kind]=a.points;
-  for(const k of PA_KINDS)if(!Array.isArray(a.curves[k]))a.curves[k]=[];
-  if(!PA_KINDS.includes(a.kind))a.kind='vol';
-  // Keep each control-point object's identity stable: selection and dragging hold references to these objects.
-  for(const k of PA_KINDS){a.curves[k]=a.curves[k].filter(q=>q&&Number.isFinite(+q.t)&&Number.isFinite(+q.v));for(const q of a.curves[k]){q.t=Math.max(0,Math.min(p.len,+q.t));q.v=Math.max(-1,Math.min(1,+q.v))}a.curves[k].sort((x,y)=>x.t-y.t)}
-  return a;
-}
-function patAutoMap(kind,v){return kind==='vol'?Math.max(0,1+v):kind==='pitch'?v*12:kind==='pan'?v:kind==='filter'?Math.max(0,Math.min(1,(v+1)/2)):Math.max(0,Math.min(1,(v+1)/2))}
-function patAutoVal(p,b,kind){
- const a=p&&paEnsure(p),pts=a&&a.curves[kind];if(!pts||!pts.length)return kind==='vol'?1:kind==='filter'?.5:0;
- if(b<=pts[0].t)return patAutoMap(kind,pts[0].v);if(b>=pts[pts.length-1].t)return patAutoMap(kind,pts[pts.length-1].v);
- let i=0;while(i<pts.length-2&&b>pts[i+1].t)i++;const x=pts[i],y=pts[i+1],u=(b-x.t)/Math.max(1e-9,y.t-x.t);
- let v;
- if(a.mode==='curve'){const sm=Math.max(0,Math.min(1,+a.smooth||0.5)),u2=u*u,u3=u2*u,soft=u2*(3-2*u);v=x.v+(y.v-x.v)*(u*(1-sm)+soft*sm)}
- else v=x.v+(y.v-x.v)*u;
- return patAutoMap(kind,v)
-}
+  for(const k of Object.keys(PADEF)){if(!Array.isArray(a.curves[k]))a.curves[k]=[];a.curves[k]=a.curves[k].map(q=>({t:Math.max(0,Math.min(p.len,Number(q.t)||0)),v:Math.max(PADEF[k].min,Math.min(PADEF[k].max,Number(q.v)||0)),shape:['line','step','smooth'].includes(q.shape)?q.shape:undefined})).sort((x,y)=>x.t-y.t)}
+  delete a.points;return a}
+function patAutoVal(p,b,kind){const a=paEnsure(p),cfg=PADEF[kind]||PADEF.vol,pts=a&&a.curves&&a.curves[kind];if(!pts||!pts.length)return kind==='vol'?1:cfg.def;
+  if(b<=pts[0].t)return patAutoMap(kind,pts[0].v);if(b>=pts[pts.length-1].t)return patAutoMap(kind,pts[pts.length-1].v);
+  let i=0;while(i<pts.length-2&&b>pts[i+1].t)i++;const x=pts[i],y=pts[i+1],u=Math.max(0,Math.min(1,(b-x.t)/Math.max(1e-9,y.t-x.t))),shape=x.shape||'line';
+  let v=shape==='step'?x.v:shape==='smooth'?(x.v+(y.v-x.v)*(u*u*(3-2*u))):(x.v+(y.v-x.v)*u);return patAutoMap(kind,v)}
+function patAutoMap(kind,v){return kind==='vol'?Math.max(0,1+v):kind==='pitch'?v*12:kind==='pan'?Math.max(-1,Math.min(1,v)):kind==='filter'?200+Math.max(0,Math.min(1,v))*17800:Math.max(0,v)}
 function patAutoPitch(p,b){return patAutoVal(p,b,'pitch')*100}
-function paGeom(){const vh=Math.max(1,roll.clientHeight),usable=Math.max(1,vh-RULER-8);return{vh,usable,mid:RULER+usable/2}}
-function paPoint(e){const rc=cv.getBoundingClientRect(),x=e.clientX-rc.left+roll.scrollLeft,y=e.clientY-rc.top,{usable,mid}=paGeom();let t=(x/BW),v=(mid-y)/(usable*.45);if($('paSnap')?.checked)t=Math.round(t/GRID)*GRID;return{t:Math.max(0,Math.min(EP.len,t)),v:Math.max(-1,Math.min(1,v))}}
-function drawPatternAutomationOverlay(){
- if(!PAEdit||VIEW!=='roll'||!EP)return;
- const r=devicePixelRatio||1,vw=Math.max(1,roll.clientWidth),vh=Math.max(1,roll.clientHeight),sx=roll.scrollLeft,{usable,mid}=paGeom(),a=paEnsure(EP),pts=a.curves[PAKind]||[];paSyncFields();
- g2.save();g2.setTransform(r,0,0,r,0,0);
- /* veil makes the locked notes visibly secondary */
- g2.fillStyle=css('--panel');g2.globalAlpha=.62;g2.fillRect(0,RULER,vw,vh-RULER);g2.globalAlpha=1;
- g2.strokeStyle=css('--line');g2.lineWidth=1;for(const v of [-1,-.5,0,.5,1]){const y=mid-v*usable*.45;g2.beginPath();g2.moveTo(0,y);g2.lineTo(vw,y);g2.stroke()}
- g2.strokeStyle=css('--acc');g2.lineWidth=2.5;g2.beginPath();
- const pxMax=Math.min(vw,EP.len*BW-sx);for(let x=0;x<=pxMax;x+=2){const v=autoPatRaw(a,(x+sx)/BW,PAKind),y=mid-v*usable*.45;if(x===0)g2.moveTo(x,y);else g2.lineTo(x,y)}g2.stroke();
- for(const p of pts){const x=p.t*BW-sx,y=mid-p.v*usable*.45;if(x<-12||x>vw+12)continue;g2.beginPath();g2.arc(x,y,aselPA.has(p)?7:6,0,Math.PI*2);g2.fillStyle=aselPA.has(p)?css('--acc'):css('--panel');g2.fill();g2.strokeStyle=css('--acc');g2.lineWidth=2;g2.stroke()}
- g2.fillStyle=css('--fg');g2.font='bold 12px system-ui';g2.fillText('オートメーション：'+PA_LABELS[PAKind]+'　点を追加／ドラッグ、右クリックで削除',8,RULER+15);g2.restore()
-}
-function autoPatRaw(a,b,kind){const pts=a.curves[kind]||[];if(!pts.length)return kind==='vol'?0:0;if(b<=pts[0].t)return pts[0].v;if(b>=pts[pts.length-1].t)return pts[pts.length-1].v;let i=0;while(i<pts.length-2&&b>pts[i+1].t)i++;const p=pts[i],q=pts[i+1],u=(b-p.t)/Math.max(1e-9,q.t-p.t);return a.mode==='curve'?p.v+(q.v-p.v)*(u*u*(3-2*u)):p.v+(q.v-p.v)*u}
-let aselPA=new Set(),paDrag=null;
-function paLockEvent(e){if(PAEdit&&VIEW==='roll'&&EP){e.preventDefault();e.stopImmediatePropagation()}}
-cv.addEventListener('pointerdown',e=>{
- if(!PAEdit||VIEW!=='roll'||!EP)return;paLockEvent(e);cv.setPointerCapture(e.pointerId);
- const a=paEnsure(EP),pts=a.curves[PAKind],p=paPoint(e),rc=cv.getBoundingClientRect(),sx=roll.scrollLeft,mx=e.clientX-rc.left;
- let hit=null,bd=18*18;for(const q of pts){const d=(q.t*BW-sx-mx)**2+(q.v-(paGeom().mid-(e.clientY-rc.top))/(paGeom().usable*.45))**2*100;if(d<bd){bd=d;hit=q}}
- if(e.button===2){if(hit){pushUndo();a.curves[PAKind]=pts.filter(q=>q!==hit);aselPA.delete(hit);dirty();draw()}return}
- if(hit){if(e.shiftKey){if(aselPA.has(hit))aselPA.delete(hit);else aselPA.add(hit);draw();return}if(!aselPA.has(hit))aselPA=new Set([hit]);pushUndo();paDrag={mode:'move',before:[...aselPA].map(q=>({q,t:q.t,v:q.v})),start:p};}
- else{pushUndo();const q={t:p.t,v:p.v};pts.push(q);pts.sort((x,y)=>x.t-y.t);aselPA=new Set([q]);paDrag={mode:'move',before:[{q,t:q.t,v:q.v}],start:p};}
- draw();dirty();
-},true);
-cv.addEventListener('pointermove',e=>{
- if(!PAEdit||VIEW!=='roll'||!EP||!paDrag)return;paLockEvent(e);const p=paPoint(e),a=paEnsure(EP),base=paDrag.before;let dt=p.t-paDrag.start.t,dv=p.v-paDrag.start.v;
- const minT=Math.min(...base.map(o=>o.t)),maxT=Math.max(...base.map(o=>o.t));dt=Math.max(-minT,Math.min(EP.len-maxT,dt));
- const minV=Math.min(...base.map(o=>o.v)),maxV=Math.max(...base.map(o=>o.v));dv=Math.max(-1-minV,Math.min(1-maxV,dv));
- for(const o of base){o.q.t=o.t+dt;o.q.v=o.v+dv}a.curves[PAKind].sort((x,y)=>x.t-y.t);draw();
-},true);
-function endPADrag(e){if(!PAEdit||VIEW!=='roll')return;if(paDrag){paDrag=null;dirty();draw()}}
-cv.addEventListener('pointerup',endPADrag,true);cv.addEventListener('pointercancel',endPADrag,true);
-cv.addEventListener('contextmenu',e=>{if(!PAEdit||VIEW!=='roll'||!EP)return;e.preventDefault();const p=paPoint(e),a=paEnsure(EP),pts=a.curves[PAKind];let hit=pts.reduce((best,q)=>Math.abs(q.t-p.t)<Math.abs((best||{t:1e9}).t-p.t)?q:best,null);if(hit&&Math.abs(hit.t-p.t)<Math.max(.25,12/BW)){pushUndo();a.curves[PAKind]=pts.filter(q=>q!==hit);aselPA.delete(hit);dirty();draw()}},true);
-$('paMode')?.addEventListener('click',()=>{if(!EP)return;const a=paEnsure(EP);pushUndo();a.mode=a.mode==='curve'?'line':'curve';$('paMode').textContent=a.mode==='curve'?'曲線':'直線';dirty();draw()});
-function paSyncFields(){const p=aselPA.size===1?[...aselPA][0]:null;const t=$('paTime'),v=$('paValue');if(t&&document.activeElement!==t)t.value=p?p.t.toFixed(2):'';if(v&&document.activeElement!==v)v.value=p?p.v.toFixed(2):'';if($('paMode')&&EP)$('paMode').textContent=paEnsure(EP).mode==='curve'?'曲線':'直線'}
-$('paTime')?.addEventListener('change',e=>{const p=aselPA.size===1?[...aselPA][0]:null;if(!p||!EP)return;pushUndo();p.t=Math.max(0,Math.min(EP.len,+e.target.value||0));paEnsure(EP).curves[PAKind].sort((a,b)=>a.t-b.t);dirty();draw()});
-$('paValue')?.addEventListener('change',e=>{const p=aselPA.size===1?[...aselPA][0]:null;if(!p||!EP)return;pushUndo();p.v=Math.max(-1,Math.min(1,+e.target.value||0));dirty();draw()});
-function togglePatternAutomation(){if(!EP){$('st').textContent='先にパターンを開いてください';return}PAEdit=!PAEdit;aselPA=new Set();if(PAEdit){PAKind=EP.automation?.kind||'vol';paEnsure(EP);$('patAuto').classList.add('on');$('patAutoKind').style.display='';$('patAutoKind').value=PAKind;$('st').textContent='オートメーション編集：音符はロックされています'}else{$('patAuto').classList.remove('on');$('patAutoKind').style.display='none';$('st').textContent='オートメーション編集を終了しました'}draw()}
-$('patAuto').onclick=togglePatternAutomation;
-$('patAutoKind').onchange=e=>{PAKind=e.target.value;if(EP){paEnsure(EP);EP.automation.kind=PAKind;aselPA=new Set();draw();dirty()}};
-document.addEventListener('keydown',e=>{if(!PAEdit||VIEW!=='roll')return;if(['Delete','Backspace','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&!['paTime','paValue'].includes(document.activeElement?.id)){e.preventDefault();e.stopImmediatePropagation()}},true);
+function paCanvasPoint(e){const rc=cv.getBoundingClientRect(),usable=Math.max(1,roll.clientHeight-RULER),x=e.clientX-rc.left+roll.scrollLeft,y=e.clientY-rc.top,mid=RULER+usable/2,cfg=PADEF[PAKind]||PADEF.vol;
+  let t=Math.max(0,Math.min(EP.len,(x/BW))),v=(cfg.max+cfg.min)/2-((y-mid)/(usable*.45))*(cfg.max-cfg.min)/2;
+  if($('paSnap')?.checked)t=Math.round(t/(+$('paGrid')?.value||GRID))/(1/(+$('paGrid')?.value||GRID));
+  v=Math.max(cfg.min,Math.min(cfg.max,v));return{t,v}}
+function paXY(q){const usable=Math.max(1,roll.clientHeight-RULER),cfg=PADEF[PAKind]||PADEF.vol,mid=RULER+usable/2;return{x:q.t*BW-roll.scrollLeft,y:mid-((q.v-(cfg.max+cfg.min)/2)/((cfg.max-cfg.min)/2||1))*usable*.45}}
+function drawPatternAutomationOverlay(){if(!PAEdit||VIEW!=='roll'||!EP)return;const r=devicePixelRatio||1,vw=Math.max(1,roll.clientWidth),vh=Math.max(1,roll.clientHeight),a=paEnsure(),pts=a.curves[PAKind]||[],usable=Math.max(1,vh-RULER),mid=RULER+usable/2,cfg=PADEF[PAKind]||PADEF.vol;
+  g2.save();g2.setTransform(r,0,0,r,0,0);g2.globalAlpha=.72;g2.fillStyle=css('--panel');g2.fillRect(0,RULER,vw,vh-RULER);
+  // 音符は編集対象から視覚的に退避(音符データは変更しない)
+  g2.globalAlpha=.16;g2.fillStyle=css('--note');for(const n of EP.notes||[])g2.fillRect(n.s*BW-roll.scrollLeft,(HI-1-n.p)*RH+RULER-roll.scrollTop,Math.max(3,n.d*BW-1),Math.max(3,RH-2));g2.globalAlpha=1;
+  g2.strokeStyle=css('--line');g2.setLineDash([4,4]);g2.beginPath();g2.moveTo(0,mid);g2.lineTo(vw,mid);g2.stroke();g2.setLineDash([]);
+  if(pts.length){g2.strokeStyle=css('--acc');g2.lineWidth=2.5;g2.beginPath();pts.forEach((q,i)=>{const z=paXY(q);if(!i)g2.moveTo(z.x,z.y);else{const prev=pts[i-1],shape=prev.shape||'line';if(shape==='step'){g2.lineTo(z.x,paXY(prev).y);g2.lineTo(z.x,z.y)}else if(shape==='smooth'){const pz=paXY(prev),dx=(z.x-pz.x)/3;g2.bezierCurveTo(pz.x+dx,pz.y,z.x-dx,z.y,z.x,z.y)}else g2.lineTo(z.x,z.y)}});g2.stroke();
+    pts.forEach((q,i)=>{const z=paXY(q);g2.beginPath();g2.arc(z.x,z.y,i===PASelected?8:6,0,Math.PI*2);g2.fillStyle=i===PASelected?css('--acc'):css('--panel');g2.fill();g2.strokeStyle=css('--acc');g2.lineWidth=2;g2.stroke()})}
+  g2.fillStyle=css('--acc');g2.font='bold 12px system-ui';g2.fillText('オートメーション: '+cfg.label+'　点をドラッグ / 空白をタップして追加',8,RULER+15);g2.restore()}
+function paFindPoint(e){const a=paEnsure(),pts=a.curves[PAKind]||[],rc=cv.getBoundingClientRect();let best=-1,bd=Infinity;for(let i=0;i<pts.length;i++){const z=paXY(pts[i]),d=Math.hypot(e.clientX-rc.left-z.x,e.clientY-rc.top-z.y);if(d<bd){bd=d;best=i}}return bd<=(e.pointerType==='touch'?24:13)?best:-1}
+function paCommit(){if(!EP)return;const a=paEnsure(),pts=a.curves[PAKind];pts.sort((x,y)=>x.t-y.t);for(let i=pts.length-1;i>0;i--)if(Math.abs(pts[i].t-pts[i-1].t)<.001)pts.splice(i-1,1);PASelected=Math.min(PASelected,pts.length-1);draw();dirty()}
+cv.addEventListener('pointerdown',e=>{if(!PAEdit||VIEW!=='roll'||!EP)return;e.preventDefault();e.stopImmediatePropagation();if(cv.setPointerCapture)try{cv.setPointerCapture(e.pointerId)}catch(_){}const a=paEnsure(),pts=a.curves[PAKind],hit=paFindPoint(e);pushUndo();PAChanged=true;
+  if(hit>=0){PASelected=hit;if($('paShape'))$('paShape').value=pts[hit].shape||'line';PAStart={id:e.pointerId,idx:hit,orig:pts.map(q=>({...q}))}}
+  else{const q=paCanvasPoint(e);let idx=pts.findIndex(z=>Math.abs(z.t-q.t)<.001);if(idx<0){pts.push({...q});pts.sort((x,y)=>x.t-y.t);idx=pts.findIndex(z=>Math.abs(z.t-q.t)<.001)}PASelected=idx;if($('paShape'))$('paShape').value=pts[idx]?.shape||'line';PAStart={id:e.pointerId,idx,orig:pts.map(z=>({...z}))}}
+  draw();dirty()},true);
+cv.addEventListener('pointermove',e=>{if(!PAEdit||VIEW!=='roll')return;if(!PAStart||PAStart.id!==e.pointerId){if(PAEdit){e.stopImmediatePropagation();if(e.buttons||e.pointerType==='touch')e.preventDefault()}return}e.preventDefault();e.stopImmediatePropagation();const a=paEnsure(),pts=a.curves[PAKind],q=paCanvasPoint(e),idx=PASelected;if(idx<0||!pts[idx])return;pts[idx].t=q.t;pts[idx].v=q.v;pts.sort((x,y)=>x.t-y.t);PASelected=pts.indexOf(pts.reduce((b,z)=>Math.abs(z.t-q.t)<Math.abs(b.t-q.t)?z:b,pts[0]));draw();dirty()},true);
+function paEnd(e){if(!PAEdit)return;if(PAStart&&(!e||PAStart.id===e.pointerId)){PAStart=null;if(PAChanged){paCommit();PAChanged=false}}}
+cv.addEventListener('pointerup',e=>{if(PAEdit){e.preventDefault();e.stopImmediatePropagation();paEnd(e)}},true);cv.addEventListener('pointercancel',e=>paEnd(e),true);
+cv.addEventListener('contextmenu',e=>{if(!PAEdit||VIEW!=='roll'||!EP)return;e.preventDefault();e.stopImmediatePropagation();const i=paFindPoint(e);if(i>=0){pushUndo();paEnsure().curves[PAKind].splice(i,1);PASelected=-1;paCommit()}},true);
+function togglePatternAutomation(){if(!EP){$('st').textContent='先にパターンを開いてください';return}PAEdit=!PAEdit;PAStart=null;PASelected=-1;if(PAEdit){paEnsure();PAKind=EP.automation?.kind||'vol';$('patAuto').classList.add('on');$('patAutoKind').style.display='';$('patAutoKind').value=PAKind;$('st').textContent='オートメーション編集: 点をドラッグ、空白をタップして追加。右クリックで削除'}else{$('patAuto').classList.remove('on');$('patAutoKind').style.display='none';$('st').textContent='オートメーション編集を終了しました'}draw()}
+$('patAuto').onclick=togglePatternAutomation;$('patAutoKind').onchange=e=>{PAKind=e.target.value;if(EP){paEnsure();EP.automation.kind=PAKind;PASelected=-1;draw();dirty()}};
+function paUpdateControls(){const show=PAEdit;for(const id of ['paSnapWrap','paGrid','paShape','paDelete']){const el=$(id);if(el)el.style.display=show?'':'none'}}
+const _togglePatternAutomation=togglePatternAutomation;
+togglePatternAutomation=function(){_togglePatternAutomation();paUpdateControls()};$('patAuto').onclick=togglePatternAutomation;
+$('paShape').onchange=e=>{if(!EP||PASelected<0)return;const pts=paEnsure().curves[PAKind];if(!pts[PASelected])return;pushUndo();pts[PASelected].shape=e.target.value;paCommit()};
+$('paDelete').onclick=()=>{if(!EP||PASelected<0)return;const pts=paEnsure().curves[PAKind];if(!pts[PASelected])return;pushUndo();pts.splice(PASelected,1);PASelected=-1;paCommit()};
+addEventListener('keydown',e=>{if(!PAEdit||VIEW!=='roll'||!EP)return;const k=e.key;if(k==='Delete'||k==='Backspace'){e.preventDefault();e.stopImmediatePropagation();if(PASelected>=0){const pts=paEnsure().curves[PAKind];pushUndo();pts.splice(PASelected,1);PASelected=-1;paCommit()}}},true);
 
 /* ---------- パターン / ソングエディター ---------- */
 let EP=null,bufObj=null,NC=null,VIEW='roll',sSel=null,sdrag=null,lastTap={pl:null,t:0};const SRH=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)?34:24,svTop={roll:(HI-1-76)*RH,song:0};
@@ -1066,7 +1032,7 @@ function drawSong(){
 function setView(v){if(v===VIEW)return;syncBuf();svTop[VIEW]=roll.scrollTop;VIEW=v;selSet.clear();selNote=null;drag=null;
   $('vlw').style.display=v==='roll'?'':'none';$('sgbar').style.display=v==='song'?'flex':'none';$('abar').style.display=v==='auto'?'flex':'none';
   $('vSong').classList.toggle('on',v==='song');$('vRoll').classList.toggle('on',v==='roll');draw();roll.scrollTop=svTop[v];draw();syncSongBar()}
-$('vSong').onclick=()=>{PAEdit=false;$('patAuto').classList.remove('on');$('patAutoKind').style.display='none';setView('song')};$('vRoll').onclick=()=>setView('roll');
+$('vSong').onclick=()=>{PAEdit=false;PAStart=null;$('patAuto').classList.remove('on');$('patAutoKind').style.display='none';if(typeof paUpdateControls==='function')paUpdateControls();setView('song')};$('vRoll').onclick=()=>setView('roll');
 function openPattern(q){const P=S.patterns.find(p=>p.id===q.pid);if(!P)return;syncBuf();bufObj=null;EP=P;S.edit=P.id;sel=q.ti;selSet.clear();selNote=null;sSel=q;
   setView('roll');renderTracks();draw();roll.scrollLeft=0;$('st').textContent='パターン「'+P.name+'」を編集中(ソング画面に戻るとブロックに反映されます)'}
 function fitSong(){let mx=0;for(const q of S.place)mx=Math.max(mx,q.s+q.l);for(const q of S.aplace)mx=Math.max(mx,q.s+q.l);if(mx>S.len)S.len=Math.min(MAXBARS*4,Math.ceil(mx/4)*4);fitLen()}
