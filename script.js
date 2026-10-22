@@ -939,7 +939,8 @@ function paEnsure(p){
   if(Array.isArray(a.points)&&!a.curves[a.kind])a.curves[a.kind]=a.points;
   for(const k of PA_KINDS)if(!Array.isArray(a.curves[k]))a.curves[k]=[];
   if(!PA_KINDS.includes(a.kind))a.kind='vol';
-  for(const k of PA_KINDS)a.curves[k]=a.curves[k].filter(q=>q&&Number.isFinite(+q.t)&&Number.isFinite(+q.v)).map(q=>({t:Math.max(0,Math.min(p.len,+q.t)),v:Math.max(-1,Math.min(1,+q.v))})).sort((x,y)=>x.t-y.t);
+  // Keep each control-point object's identity stable: selection and dragging hold references to these objects.
+  for(const k of PA_KINDS){a.curves[k]=a.curves[k].filter(q=>q&&Number.isFinite(+q.t)&&Number.isFinite(+q.v));for(const q of a.curves[k]){q.t=Math.max(0,Math.min(p.len,+q.t));q.v=Math.max(-1,Math.min(1,+q.v))}a.curves[k].sort((x,y)=>x.t-y.t)}
   return a;
 }
 function patAutoMap(kind,v){return kind==='vol'?Math.max(0,1+v):kind==='pitch'?v*12:kind==='pan'?v:kind==='filter'?Math.max(0,Math.min(1,(v+1)/2)):Math.max(0,Math.min(1,(v+1)/2))}
