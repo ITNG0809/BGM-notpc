@@ -154,49 +154,50 @@ aside{min-width:0;overflow-x:hidden}
 #patAutoKind{max-width:110px}
 #sgAT,#sgDelAT,#sgbar>#akind{display:none!important}
 
-/* ==== iPhone専用: ボタン(中の文字・アイコン含む)を約2/3に縮小 ====
-   html.iphone は index.html の先頭スクリプトが iPhone / iPod のときだけ付けます。
-   PC・Android・iPad には何も適用されません。
+/* ==== 画面が小さいとき(幅700px以下)だけ: ボタン(中の文字・アイコン含む)を約2/3に縮小 ====
+   端末(iPhone/Android/PC)は問わず、画面幅だけで切り替わります。
    (ドロップダウンの表示ボタン [aria-haspopup] は「選択欄」なので対象外) */
-html.iphone :where(button:not([aria-haspopup])){font-size:.6667em;padding:5px 8px;min-height:27px;border-radius:5px}
+@media(max-width:700px){
+html:root :where(button:not([aria-haspopup])){font-size:.6667em;padding:5px 8px;min-height:27px;border-radius:5px}
 
 /* ヘッダー・ツールバー・表示バーのアイコンボタン */
-html.iphone button.ib{height:27px;min-height:27px;min-width:27px;padding:0 5px;gap:3px;border-radius:5px}
-html.iphone button.ib.sq{width:27px;padding:0}
-html.iphone button.ib .lb{font-size:8px}
-html.iphone button .ic{width:12px;height:12px}
-html.iphone #dock button.ib{height:23px;min-height:23px;padding:0 5px;font-size:8px}
-html.iphone #dock button .ic{width:11px;height:11px}
-html.iphone #dock button.ib .lb{font-size:8px}
+html:root button.ib{height:27px;min-height:27px;min-width:27px;padding:0 5px;gap:3px;border-radius:5px}
+html:root button.ib.sq{width:27px;padding:0}
+html:root button.ib .lb{font-size:8px}
+html:root button .ic{width:12px;height:12px}
+html:root #dock button.ib{height:23px;min-height:23px;padding:0 5px;font-size:8px}
+html:root #dock button .ic{width:11px;height:11px}
+html:root #dock button.ib .lb{font-size:8px}
 
 /* ソング / ピアノロール 切替 */
-html.iphone .seg button{height:27px;min-height:27px;padding:0 7px;font-size:8px}
-html.iphone .seg button:first-child{border-radius:5px 0 0 5px}
-html.iphone .seg button:last-child{border-radius:0 5px 5px 0}
+html:root .seg button{height:27px;min-height:27px;padding:0 7px;font-size:8px}
+html:root .seg button:first-child{border-radius:5px 0 0 5px}
+html:root .seg button:last-child{border-radius:0 5px 5px 0}
 
 /* トラック欄 */
-html.iphone .trk button{padding:3px 5px;min-height:21px}
-html.iphone .trk .r:first-child button{padding-left:3px;padding-right:3px}
+html:root .trk button{padding:3px 5px;min-height:21px}
+html:root .trk .r:first-child button{padding-left:3px;padding-right:3px}
 
 /* ミキサー */
-html.iphone .fx button{padding:1px 5px;min-height:25px;min-width:25px}
+html:root .fx button{padding:1px 5px;min-height:25px;min-width:25px}
 
 /* 編集ツールバー(オートメーション等の文字ボタン) */
-html.iphone .bar2 button{padding:1px 7px;min-height:21px}
-html.iphone .bar2 button.ib{height:27px;min-height:27px;padding:0 5px}
-html.iphone .bar2 button.ib.sq{width:27px;padding:0}
+html:root .bar2 button{padding:1px 7px;min-height:21px}
+html:root .bar2 button.ib{height:27px;min-height:27px;padding:0 5px}
+html:root .bar2 button.ib.sq{width:27px;padding:0}
 
 /* 自作エフェクト画面 */
-html.iphone .fxt button{min-height:25px}
-html.iphone #fsPal button{min-height:27px;margin-bottom:3px}
-html.iphone .fn .fdel{min-height:20px;min-width:20px;font-size:10px;padding:0}
+html:root .fxt button{min-height:25px}
+html:root #fsPal button{min-height:27px;margin-bottom:3px}
+html:root .fn .fdel{min-height:20px;min-width:20px;font-size:10px;padding:0}
 
 /* SF2ライブラリ */
-html.iphone .sflt button{min-height:25px}
-html.iphone .sfd button,html.iphone .sff button{min-height:21px;min-width:21px;padding:0 4px}
-html.iphone .plr button{min-height:24px;min-width:24px}
-html.iphone .sfh button{min-height:24px}
-html.iphone #sflR button[data-more]{min-height:28px!important;margin-top:4px!important}
+html:root .sflt button{min-height:25px}
+html:root .sfd button,html:root .sff button{min-height:21px;min-width:21px;padding:0 4px}
+html:root .plr button{min-height:24px;min-width:24px}
+html:root .sfh button{min-height:24px}
+html:root #sflR button[data-more]{min-height:28px!important;margin-top:4px!important}
 
 /* ダイアログ(書き出し・SE編集・ブロック長) */
-html.iphone .xdlg .xb button{min-height:28px;padding:0 11px}
+html:root .xdlg .xb button{min-height:28px;padding:0 11px}
+}
