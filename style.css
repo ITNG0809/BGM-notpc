@@ -200,4 +200,8 @@ html:root #sflR button[data-more]{min-height:28px!important;margin-top:4px!impor
 
 /* ダイアログ(書き出し・SE編集・ブロック長) */
 html:root .xdlg .xb button{min-height:28px;padding:0 11px}
+/* 下のツール類(スクロールバー・編集ツールバー・ミキサー・表示バー)を画面の一番下に固定 */
+html:root{padding-top:0;padding-bottom:0}
+html:root body{position:fixed;inset:0;height:auto;overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:0}
+html:root #dock{padding-bottom:calc(3px + env(safe-area-inset-bottom,0px))}
 }
